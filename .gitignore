@@ -1,3 +1,4 @@
-OUTPUT.md
-1.md
-main.py
+__pycache__
+*.pyc
+*.pyo
+*.pyd
