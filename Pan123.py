@@ -1,6 +1,5 @@
 import time
 import requests
-import json
 from tqdm import tqdm
 import pickle
 
