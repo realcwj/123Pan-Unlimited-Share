@@ -10,7 +10,7 @@ if __name__ == "__main__":
     # 模式："export" (分享) 或 "import" (导入)
     mode = "export"
     # 分享文件才需要的参数：文件夹ID (如果要分享整个网盘，填 0 )
-    homeFilePath = 0
+    homeFilePath = 0 # 如果分享整个网盘, 速度会很慢
     
     
     
