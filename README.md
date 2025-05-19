@@ -39,7 +39,7 @@
     homeFilePath = 0 # 如果分享整个网盘, 速度会很慢
     ```
 
-    - `homeFilePath` 可以通过 123 云盘的网页版获取 （见下方FAQ）
+    - `homeFilePath` 可以通过 123 云盘的网页版获取 （见下方 [FAQ](#FAQ)）
 
 2. 运行 `run.py`
 
