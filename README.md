@@ -1,7 +1,3 @@
-<!-- <p align="center">
-  <img src="./images/background.png" style="max-width: 60%; height: auto;">
-</p> -->
-
 # [123云盘](https://www.123pan.com) 无限制分享助手
 
 - 欢迎提 Pull Requests 或 **详细的可复现的** Issues。
@@ -196,13 +192,18 @@
 
 1. 打开 123 云盘网页版
 
-2. 打开你想分享的整个文件夹
+2. 打开你想分享的整个文件夹 (比如你要分享ABCD文件夹，那就点进去)
+
+- 这时候浏览器的网页链接应该是类似这样的：
+   ```url
+   https://www.123pan.com/?homeFilePath=12345678
+   或者
+   https://www.123pan.com/?homeFilePath=12345678,87654321
+   ```
 
 3. 复制浏览器链接中的最后一部分数字
 
-    ![how_to_share.png](./images/how_to_share.png)
-
-    - 如上图所示, 分享的文件夹ID为 `13685159`
+- 如上面的两个链接所示, 分享的文件夹ID分别为 `12345678` 和 `87654321`
 
 ### 是否会泄露我的隐私?
 
