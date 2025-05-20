@@ -1,7 +1,8 @@
 import time
 import requests
 from tqdm import tqdm
-import pickle
+import base64
+import json
 
 class Pan123:
     # Refer: https://github.com/AlistGo/alist/blob/main/drivers/123/util.go
@@ -213,8 +214,10 @@ class Pan123:
         # 保存数据
         # with open(savePath, "w", encoding="utf-8") as f:
         #     json.dump(ALL_ITEMS, f, indent=4, ensure_ascii=False)
+        # 使用 base64 加密json数据防止被简单的内容审查程序读取内容
         with open(savePath, "wb") as f:
-            pickle.dump(ALL_ITEMS, f)
+            f.write(base64.b64encode(json.dumps(ALL_ITEMS, ensure_ascii=False).encode("utf-8")))
+        print(f"导出完成, 保存到: {savePath}")
     
     def createFolder(self, parentFileId, folderName):
         body = {
@@ -282,7 +285,7 @@ class Pan123:
     def importFiles(self, filePath="./export.123"):
         # 读取数据
         with open(filePath, "rb") as f:
-            files_list = pickle.load(f)
+            files_list = json.loads(base64.b64decode(f.read()).decode("utf-8"))
         
         ID_MAP = {} # {原文件夹ID: 新文件夹ID}
         
@@ -294,20 +297,24 @@ class Pan123:
                 ALL_FOLDERS.append({
                     **item,
                     "folderDepth": item.get("AbsPath").count("/"),
-                    # "newFolderId": None,
                 })
             elif item.get("Type") == 0:
-                ALL_FILES.append(item)
+                ALL_FILES.append({
+                    **item,
+                    "fileDepth": item.get("AbsPath").count("/"),
+                })
             else:
                 raise ValueError(f"未知类型：{item}")
 
         ALL_FOLDERS.sort(key=lambda x: x.get("folderDepth")) # 按照深度从0(根目录)开始排序
         # 先在根目录创建文件夹
         current_time = time.strftime("%Y%m%d%H%M%S", time.localtime())
+        rootFolderName = f"秒传文件_{current_time}_GitHub@realcwj" # 请尊重作者, 感谢配合!
         rootFolderId = self.createFolder(
             parentFileId = 0,
-            folderName = f"秒传文件_{current_time}_GitHub@realcwj" # 请尊重作者, 感谢配合!
+            folderName = rootFolderName
         )
+        # 如果分享的内容包含目录 (root目录放在目录的检测中记录)
         for folder in tqdm(ALL_FOLDERS):
             # 如果是根目录, 获取原根目录的parentFileId, 映射到rootFolderId
             if folder.get("folderDepth") == 0:
@@ -319,13 +326,15 @@ class Pan123:
             )
             # 映射原文件夹ID到新文件夹ID
             ID_MAP[folder.get("FileId")] = newFolderId
-            
+        
         # 遍历数据, 上传文件
         for item in tqdm(ALL_FILES):
-            if item.get("Type") == 0:
-                self.uploadFile(
-                    etag = item.get("Etag"),
-                    fileName = item.get("FileName"),
-                    parentFileId = ID_MAP.get(item.get("parentFileId")), # 基于新的目录结构上传文件
-                    size = item.get("Size")
-                )
+            if item.get("fileDepth") == 0:
+                ID_MAP[item.get("parentFileId")] = rootFolderId
+            self.uploadFile(
+                etag = item.get("Etag"),
+                fileName = item.get("FileName"),
+                parentFileId = ID_MAP.get(item.get("parentFileId")), # 基于新的目录结构上传文件
+                size = item.get("Size")
+            )
+        print(f"导入完成, 保存到123网盘根目录中的: >>> {rootFolderName} <<< 文件夹")
