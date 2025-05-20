@@ -6,9 +6,9 @@ if __name__ == "__main__":
     # 密码
     password = "123456"
     # 文件位置
-    filePath = "./result.123share"
+    filePath = "./share/周杰伦音乐母带资源共176首.123share"
     # 模式："export" (分享) 或 "import" (导入)
-    mode = "export"
+    mode = "import"
     # 分享文件才需要的参数：文件夹ID (如果要分享整个网盘，填 0 )
     homeFilePath = 0 # 如果分享整个网盘, 速度会很慢
     
