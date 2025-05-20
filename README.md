@@ -188,7 +188,7 @@
 
 ## 目前分享了哪些文件？
 
-- 目前所有分享的文件请看 [目录树 (./TREE.md)](https://raw.githubusercontent.com/realcwj/123Pan-Unlimited-Share/refs/heads/main/TREE.md) (提醒：文件内容总共 19w+ 行, 加载前请确保电脑性能强劲~)
+- 目前所有分享的文件请看 [目录树 (./TREE.md)](https://raw.githubusercontent.com/realcwj/123Pan-Unlimited-Share/refs/heads/main/TREE.md) (from: 酷安@一笔轻安) (提醒：文件内容总共 19w+ 行, 加载前请确保电脑性能强劲~)
 
 - 分享的内容均存储在 [share](./share) 文件夹中。
 
