@@ -4,3 +4,4 @@ __pycache__
 *.pyd
 /*.123share
 test.py
+/*.json

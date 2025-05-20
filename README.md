@@ -4,6 +4,8 @@
 
 # [123云盘](https://www.123pan.com) 无限制分享助手
 
+- 欢迎提 Pull Requests 或 **详细的可复现的** Issues。
+
 ## 免责声明
 
 - **本项目仅供学习研究使用，请勿将本项目用于非法用途。**
@@ -38,7 +40,7 @@
     pip install tqdm pickle requests 
     ```
 
-### 分享文件
+### 从个人网盘分享文件
 
 1. **请确保所有文件都已上传到123云盘**
 
@@ -51,7 +53,7 @@
     password = "123456"
     # 文件位置
     filePath = "./result.123share"
-    # 模式："export" (分享) 或 "import" (导入)
+    # 模式
     mode = "export"
     # 分享文件才需要的参数：文件夹ID (如果要分享整个网盘，填 0 )
     homeFilePath = 0 # 如果分享整个网盘, 速度会很慢
@@ -73,32 +75,64 @@
 
     ```shell
     (py312) d:\123Pan-Unlimited-Share>python run.py
-    获取文件列表中：parentFileId: 13712166
-    获取文件列表中：parentFileId: 13712602
-    获取文件列表中：parentFileId: 13712580
-    获取文件列表中：parentFileId: 13712558
-    获取文件列表中：parentFileId: 13712541
-    获取文件列表中：parentFileId: 13712526
-    获取文件列表中：parentFileId: 13712507
-    获取文件列表中：parentFileId: 13712476
-    获取文件列表中：parentFileId: 13712453
-    获取文件列表中：parentFileId: 13712433
-    获取文件列表中：parentFileId: 13712410
-    获取文件列表中：parentFileId: 13712389
-    获取文件列表中：parentFileId: 13712381
-    获取文件列表中：parentFileId: 13712360
-    获取文件列表中：parentFileId: 13712340
-    获取文件列表中：parentFileId: 13712319
-    获取文件列表中：parentFileId: 13712298
-    获取文件列表中：parentFileId: 13712277
-    获取文件列表中：parentFileId: 13712256
-    获取文件列表中：parentFileId: 13712236
-    获取文件列表中：parentFileId: 13712214
-    获取文件列表中：parentFileId: 13712191
-    获取文件列表中：parentFileId: 13712167
-    导出完成, 保存到: ./恶搞之家全22季.123share
+    获取文件列表中：parentFileId: xxxxxxxx
+    获取文件列表中：parentFileId: xxxxxxxx
+    获取文件列表中：parentFileId: xxxxxxxx
+    获取文件列表中：parentFileId: xxxxxxxx
+    获取文件列表中：parentFileId: xxxxxxxx
+    获取文件列表中：parentFileId: xxxxxxxx
+    获取文件列表中：parentFileId: xxxxxxxx
+    获取文件列表中：parentFileId: xxxxxxxx
+    获取文件列表中：parentFileId: xxxxxxxx
+    导出完成, 保存到: ./result.123share
     导出成功
     ```
+
+7. 分享 `result.123share` 文件给他人
+
+### 从分享链接导出文件
+
+1. 修改 `run.py` 的内容
+
+    ```python
+    # 示例分享链接：
+    # https://www.******.com/s/abcd-efg
+    # 提取码：ABCD
+    # parentFileId = "0"        # 根目录填 0 , 如需分享指定目录要从浏览器F12获取
+    # shareKey = "abcd-efg"
+    # sharePwd = "ABCD"
+
+    # 模式
+    mode = "link"
+    # 分享文件夹ID (如果要导出整个分享链接内容，填 0)
+    parentFileId = "0"
+    # 分享链接
+    shareKey = "abcd-efg"
+    # 分享密码
+    sharePwd = "ABCD"
+    # 文件位置
+    filePath = "./result.123share"
+    ```
+
+2. 运行 `run.py`
+
+    ```shell
+    python run.py
+    ```
+
+3. 等待完成
+
+4. 控制台窗口长这样
+
+    ```shell
+    (py312) d:\123Pan-Unlimited-Share>python run.py
+    获取文件列表中：parentFileId: 19658016
+    100%|█████████████████████| 1/1 [00:00<?, ?it/s]
+    100%|█████████████████████| 1/1 [00:00<?, ?it/s]
+    导出完成, 保存到: ./result.123share
+    ```
+
+5. 分享 `result.123share` 文件给他人
 
 ### 接收文件
 
@@ -131,9 +165,11 @@
     (py312) d:\123Pan-Unlimited-Share>python run.py
     100%|█████████████████████| 22/22 [00:09<00:00,  2.43it/s]
     100%|█████████████████████| 427/427 [03:05<00:00,  2.30it/s]
-    导入完成, 保存到123网盘根目录中的: >>> 秒传文件_20250520102457_GitHub@realcwj <<< 文件夹
+    导入完成, 保存到123网盘根目录中的: >>> result_GitHub@realcwj <<< 文件夹
     导入成功
     ```
+
+- **注意：** 导入的文件夹名称为 `xxxxx.123share` 中的 `xxxxx` 部分。
 
 ## 有没有接收文件的示例？
 

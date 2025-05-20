@@ -3,6 +3,7 @@ import requests
 from tqdm import tqdm
 import base64
 import json
+import os
 
 class Pan123:
     # Refer: https://github.com/AlistGo/alist/blob/main/drivers/123/util.go
@@ -24,6 +25,8 @@ class Pan123:
         }
         # 用于记录self.listFiles访问过的文件夹：{文件夹Id: 文件夹名称}
         self.listFilesVisited = {}
+        # 用于记录self.listShare访问过的文件夹：{文件夹Id: 文件夹名称}
+        self.listShareVisited = {}
     
     def getActionUrl(self, actionName):
         # 执行各类操作的Url
@@ -44,7 +47,8 @@ class Pan123:
             "S3PreSignedUrls":  f"{MainApi}/file/s3_repare_upload_parts_batch",
             "S3Auth":           f"{MainApi}/file/s3_upload_object/auth",
             "UploadCompleteV2": f"{MainApi}/file/upload_complete/v2",
-            "S3Complete":       f"{MainApi}/file/s3_complete_multipart_upload"
+            "S3Complete":       f"{MainApi}/file/s3_complete_multipart_upload",
+            "ShareList":        f"{MainApi}/share/get",
         }
         # 返回对应操作的API地址, 如果不存在则返回None
         return apis.get(actionName, None)
@@ -287,6 +291,9 @@ class Pan123:
         with open(filePath, "rb") as f:
             files_list = json.loads(base64.b64decode(f.read()).decode("utf-8"))
         
+        # 从filePath中获取文件名
+        saveFileName = os.path.basename(filePath).split(".123share")[0]
+        
         ID_MAP = {} # {原文件夹ID: 新文件夹ID}
         
         # 遍历数据，分类文件夹和文件
@@ -309,7 +316,7 @@ class Pan123:
         ALL_FOLDERS.sort(key=lambda x: x.get("folderDepth")) # 按照深度从0(根目录)开始排序
         # 先在根目录创建文件夹
         current_time = time.strftime("%Y%m%d%H%M%S", time.localtime())
-        rootFolderName = f"秒传文件_{current_time}_GitHub@realcwj" # 请尊重作者, 感谢配合!
+        rootFolderName = f"{saveFileName}_GitHub@realcwj" # 请尊重作者, 感谢配合!
         rootFolderId = self.createFolder(
             parentFileId = 0,
             folderName = rootFolderName
@@ -338,3 +345,130 @@ class Pan123:
                 size = item.get("Size")
             )
         print(f"导入完成, 保存到123网盘根目录中的: >>> {rootFolderName} <<< 文件夹")
+    
+    def listShare(self, parentFileId, shareKey, sharePwd):
+        
+        # 如果已经访问过这个文件夹，就跳过
+        if parentFileId in self.listShareVisited:
+            return None
+        
+        print(f"获取文件列表中：parentFileId: {parentFileId}")
+
+        page = 0
+        body = {
+			"limit":          "100",
+			"next":           "0",
+			"orderBy":        "file_id",
+			"orderDirection": "desc",
+			"parentFileId":   parentFileId,
+			"Page":           None,
+			"shareKey":       shareKey,
+			"SharePwd":       sharePwd,
+		}
+        
+        # 记录当前文件夹内的所有文件和文件夹
+        ALL_ITEMS = []
+        
+        try:
+            while True:
+                # 更新Page参数
+                page += 1
+                body.update({"Page": f"{page}"})
+                if self.debug:
+                    print(f"获取文件列表中：正在获取第{page}页")
+                # 发送请求
+                response_data = requests.get(
+                    url = self.getActionUrl("ShareList"),
+                    headers = self.headers,
+                    params = body
+                ).json()
+                if response_data.get("code") == 0:
+                    response_data = response_data.get("data")
+                    # 把文件列表添加到ALL_FILES
+                    ALL_ITEMS.extend(response_data.get("InfoList"))
+                    # 如果没有下一页，就退出循环
+                    if (response_data.get("Next") == "-1") or (len(response_data.get("InfoList")) == 0):
+                        if self.debug:
+                            print("已是最后一页")
+                        break
+                    # 否则进入下一页 (等待self.sleepTime秒, 防止被封)
+                    else:
+                        if self.debug:
+                            print(f"等待{self.sleepTime}秒后进入下一页")
+                        time.sleep(self.sleepTime)
+                else:
+                    print(f"获取文件列表失败：响应中未找到令牌，尽管API调用可能已成功。响应: {response_data}")
+                    return None
+
+            # 递归获取子文件夹下的文件
+            for sub_file in ALL_ITEMS:
+                if sub_file.get("Type") == 1:
+                    self.listShare(
+                        parentFileId = sub_file.get("FileId"),
+                        shareKey = shareKey,
+                        sharePwd = sharePwd
+                    )
+
+            # 记录当前文件夹内的所有文件
+            self.listShareVisited[parentFileId] = ALL_ITEMS
+
+        except Exception as e:
+            print(f"获取文件列表请求发生异常: {e}")
+            return None
+    
+    def makeAbsPath(self, fullDict, parentFileId=0):
+        _parentMapping = {} # {子文件ID: 父文件夹ID}
+        # 遍历所有文件夹和文件列表，记录每个文件的父文件夹ID
+        for key, value in tqdm(fullDict.items()):
+            for item in value:
+                _parentMapping[item.get("FileId")] = int(key) # item.get("ParentFileId")
+        if self.debug:
+            print(f"_parentMapping: {_parentMapping}")
+        # 遍历所有文件夹和文件列表，添加AbsPath
+        for key, value in tqdm(fullDict.items()):
+            for item in value:
+                _absPath = str(item.get("FileId"))
+                if self.debug:
+                    print(f"_absPath: {_absPath}")
+                    print(f"int(_absPath.split('/')[0]): {int(_absPath.split('/')[0])}")
+                while _absPath.split("/")[0] != str(parentFileId):
+                    _absPath = f"{_parentMapping.get(int(_absPath.split('/')[0]))}/{_absPath}"
+                item.update({"AbsPath": _absPath})
+        return fullDict
+
+    def exportShare(self, shareKey, sharePwd, parentFileId=0, savePath="./export.123"):
+        # 读取文件夹
+        self.listShare(
+            parentFileId=parentFileId,
+            shareKey=shareKey,
+            sharePwd=sharePwd
+            )
+        
+        # 生成路径
+        self.listShareVisited = self.makeAbsPath(
+            fullDict=self.listShareVisited,
+            parentFileId=parentFileId
+        )
+        
+        # 清洗数据
+        ALL_ITEMS = []
+        for key, value in self.listShareVisited.items():
+            # 遍历所有文件夹和文件列表
+            for item in value:
+                # 遍历所有文件和文件夹
+                ALL_ITEMS.append({
+                    "FileId": item.get("FileId"),
+                    "FileName": item.get("FileName"),
+                    "Type": item.get("Type"),
+                    "Size": item.get("Size"),
+                    "Etag": item.get("Etag"),
+                    "parentFileId": item.get("ParentFileId"),
+                    "AbsPath": item.get("AbsPath").split(f"{parentFileId}/")[-1], # 以输入的parentFileId作为根目录
+                })
+        # 保存数据
+        # with open(savePath, "w", encoding="utf-8") as f:
+        #     json.dump(ALL_ITEMS, f, indent=4, ensure_ascii=False)
+        # 使用 base64 加密json数据防止被简单的内容审查程序读取内容
+        with open(savePath, "wb") as f:
+            f.write(base64.b64encode(json.dumps(ALL_ITEMS, ensure_ascii=False).encode("utf-8")))
+        print(f"导出完成, 保存到: {savePath}")
