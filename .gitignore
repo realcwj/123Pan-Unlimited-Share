@@ -3,5 +3,5 @@ __pycache__
 *.pyo
 *.pyd
 /*.123share
-test.py
 /*.json
+/test

@@ -7,22 +7,22 @@ if __name__ == "__main__":
 
     # 【所有模式需要填写】文件位置
     filePath = "./share/result.123share"
-    
+
     # 【仅export/import模式需要填写】手机号/邮箱
     username = "13566668888"
     # 【仅export/import模式需要填写】密码
     password = "ABCDabcd1234"
-    
+
     # 【仅export模式需要填写】要分享的文件夹ID (如果要分享整个网盘，填 0 , 但是速度会很慢)
     homeFilePath = 0
-    
+
     # 示例分享链接：
     # https://www.******.com/s/abcd-efg
     # 提取码：ABCD
     # parentFileId = "0"        # 根目录填 0 , 如需分享指定目录需要从浏览器F12获取
     # shareKey = "abcd-efg"
     # sharePwd = "ABCD"
-    
+
     # 【仅link模式需要填写】分享文件夹ID (如果要导出整个分享链接的内容，填 0)
     parentFileId = "0"
     # 【仅link模式需要填写】分享链接
