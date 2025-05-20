@@ -316,7 +316,7 @@ class Pan123:
         ALL_FOLDERS.sort(key=lambda x: x.get("folderDepth")) # 按照深度从0(根目录)开始排序
         # 先在根目录创建文件夹
         current_time = time.strftime("%Y%m%d%H%M%S", time.localtime())
-        rootFolderName = f"{saveFileName}_GitHub@realcwj" # 请尊重作者, 感谢配合!
+        rootFolderName = f"{saveFileName}_{current_time}_GitHub@realcwj" # 请尊重作者, 感谢配合!
         rootFolderId = self.createFolder(
             parentFileId = 0,
             folderName = rootFolderName
