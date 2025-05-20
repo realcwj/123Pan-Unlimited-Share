@@ -222,8 +222,4 @@
 
 ## License
 
-本项目使用 [MIT License](LICENSE)。
-
-**需要特别注意的是：**
-
-> MIT License 要求您在保留 MIT License 原有的版权和许可权的前提下，**不得将本项目用于商业目的**。
+本项目使用 [GPLv3 License](LICENSE)。
