@@ -1,4 +1,6 @@
-![background](./images/background.png)
+<p align="center">
+  <img src="./images/background.png" style="max-width: 60%; height: auto;">
+</p>
 
 # [123云盘](https://www.123pan.com) 无限制分享助手
 
