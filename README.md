@@ -69,9 +69,7 @@
 
 4. 等待完成
 
-5. 分享 `result.123share` 文件给他人
-
-6. 控制台窗口长这样
+5. 控制台窗口长这样
 
     ```shell
     (py312) d:\123Pan-Unlimited-Share>python run.py
@@ -88,7 +86,7 @@
     导出成功
     ```
 
-7. 分享 `result.123share` 文件给他人
+6. 分享 `result.123share` 文件给他人
 
 ### 从分享链接导出文件
 
