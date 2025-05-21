@@ -7,7 +7,7 @@ from werkzeug.utils import secure_filename
 import werkzeug.security # For safe_join
 from Pan123 import Pan123
 
-DEBUG = True
+DEBUG = False
 
 app = Flask(__name__)
 app.secret_key = '114514'
