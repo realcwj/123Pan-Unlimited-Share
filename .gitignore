@@ -4,5 +4,5 @@ __pycache__
 *.pyd
 /*.123share
 /*.json
-/test
 /uploads/*
+*test*

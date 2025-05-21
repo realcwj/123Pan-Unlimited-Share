@@ -5,6 +5,8 @@ import base64
 import json
 import os
 
+from utils import anonymizeId, makeAbsPath
+
 class Pan123:
     # Refer: https://github.com/AlistGo/alist/blob/main/drivers/123/util.go
     
@@ -215,6 +217,8 @@ class Pan123:
                     "parentFileId": item.get("ParentFileId"),
                     "AbsPath": item.get("AbsPath").split(f"{parentFileId}/")[-1], # 以输入的parentFileId作为根目录
                 })
+        # 匿名化
+        ALL_ITEMS = anonymizeId(ALL_ITEMS)
         # 保存数据
         # with open(savePath, "w", encoding="utf-8") as f:
         #     json.dump(ALL_ITEMS, f, indent=4, ensure_ascii=False)
@@ -419,26 +423,6 @@ class Pan123:
         except Exception as e:
             print(f"获取文件列表请求发生异常: {e}")
             return None
-    
-    def makeAbsPath(self, fullDict, parentFileId=0):
-        _parentMapping = {} # {子文件ID: 父文件夹ID}
-        # 遍历所有文件夹和文件列表，记录每个文件的父文件夹ID
-        for key, value in tqdm(fullDict.items()):
-            for item in value:
-                _parentMapping[item.get("FileId")] = int(key) # item.get("ParentFileId")
-        if self.debug:
-            print(f"_parentMapping: {_parentMapping}")
-        # 遍历所有文件夹和文件列表，添加AbsPath
-        for key, value in tqdm(fullDict.items()):
-            for item in value:
-                _absPath = str(item.get("FileId"))
-                if self.debug:
-                    print(f"_absPath: {_absPath}")
-                    print(f"int(_absPath.split('/')[0]): {int(_absPath.split('/')[0])}")
-                while _absPath.split("/")[0] != str(parentFileId):
-                    _absPath = f"{_parentMapping.get(int(_absPath.split('/')[0]))}/{_absPath}"
-                item.update({"AbsPath": _absPath})
-        return fullDict
 
     def exportShare(self, shareKey, sharePwd, parentFileId=0, savePath="./export.123"):
         # 读取文件夹
@@ -449,7 +433,7 @@ class Pan123:
             )
         
         # 生成路径
-        self.listShareVisited = self.makeAbsPath(
+        self.listShareVisited = makeAbsPath(
             fullDict=self.listShareVisited,
             parentFileId=parentFileId
         )
@@ -469,6 +453,8 @@ class Pan123:
                     "parentFileId": item.get("ParentFileId"),
                     "AbsPath": item.get("AbsPath").split(f"{parentFileId}/")[-1], # 以输入的parentFileId作为根目录
                 })
+        # 匿名化
+        ALL_ITEMS = anonymizeId(ALL_ITEMS)
         # 保存数据
         # with open(savePath, "w", encoding="utf-8") as f:
         #     json.dump(ALL_ITEMS, f, indent=4, ensure_ascii=False)
