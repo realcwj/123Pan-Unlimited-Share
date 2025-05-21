@@ -63,7 +63,7 @@
 
     ```python
     # 模式："export" (从私人网盘分享)
-    mode = "import"
+    mode = "export"
 
     # 文件位置
     #   建议填写完整路径：
