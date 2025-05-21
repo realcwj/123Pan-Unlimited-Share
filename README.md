@@ -20,11 +20,30 @@
     
     也就是：**任何您分享（创建分享链接）的文件将会遭到内容审查**。然而，对于你自己上传、未分享的文件，只要有权机关不主动查你，123云盘**目前来说暂时不会**主动审查你的数据。
 
+## 核心功能
+
+- 📄 支持分享单个文件（如仅需分享单个文件, 可使用 [Greasy Fork: 123云盘秒传链接](https://greasyfork.org/zh-CN/scripts/525210-123%E4%BA%91%E7%9B%98%E7%A7%92%E4%BC%A0%E9%93%BE%E6%8E%A5)）
+
+- 📂 支持分享文件夹（批量分享），可用性更强
+
+- ☁️ 支持 [从私人网盘导出](#二从个人网盘分享文件) `*.123share` 文件（不创建分享链接、不会被审查）
+
+- 🔗 支持 [从分享链接导出](#三从分享链接导出文件) `*.123share` 文件（兼容现有分享方式）
+
+- 🎭 文件/文件夹 ID 匿名化 [[Issue #2]](https://github.com/realcwj/123Pan-Unlimited-Share/issues/2)，不暴露分享者的身份
+
+- 🌐 提供基于 `Flask` 开发的 [可视化界面（网页）](#使用在线部署的可视化界面网页)
+
+- 🚧 提供基于 `Python` 开发的 [调用脚本](#推荐本地运行-python-脚本)，可二次开发
+
+- 🥳 免费、完整、开源的代码，**本地部署更安全~**
+
 ## 目录
 
 - [123云盘 无限制分享工具](#123云盘-无限制分享工具)
   - [免责声明](#免责声明)
   - [这个项目能做什么？](#这个项目能做什么)
+  - [核心功能](#核心功能)
   - [目录](#目录)
   - [如何使用？](#如何使用)
     - [使用在线部署的可视化界面（网页）](#使用在线部署的可视化界面网页)
@@ -49,13 +68,13 @@
 
 ## 如何使用？
 
-- **⚠️重要提示：推荐本地部署网页/本地运行Python脚本，尽量避免使用他人搭建的网页，你永远不知道别人会不会在后台记录你的账号密码！**
+**⚠️重要提示：推荐本地部署网页/本地运行Python脚本，尽量避免使用他人搭建的网页，你永远不知道别人会不会在后台记录你的账号密码！**
 
 ### 使用在线部署的可视化界面（网页）
 
 - 已在这里 [http://222.186.21.40:33333/](http://222.186.21.40:33333/) 搭建了一个网页版，供大家使用。
 
-- **服务器很渣，大家轻点用，千万别给我上DDOS🥺**
+- **服务器很渣，大家轻点用，千万别给我上DDoS🥺**
 
 #### 使用教程
 
@@ -168,8 +187,8 @@
     * Debug mode: off
     WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
     * Running on all addresses (0.0.0.0)
-    * Running on http://127.0.0.1:33333
-    * Running on http://198.18.0.1:33333
+    * Running on http://127.0.0.1:33333        <<< 访问连接在这里
+    * Running on http://198.18.0.1:33333       <<< 访问连接在这里
     Press CTRL+C to quit
     ```
 
@@ -347,9 +366,9 @@
 
 ## 目前分享了哪些文件？
 
-- 目前所有分享的文件请看 [目录树 (TREE.md)](https://raw.githubusercontent.com/realcwj/123Pan-Unlimited-Share/refs/heads/main/TREE.md) (from: [酷安@一笔轻安](https://www.123865.com/s/gD58Vv-PFmHh))
+- 目前所有分享的文件请看 [目录树（TREE.md）](https://raw.githubusercontent.com/realcwj/123Pan-Unlimited-Share/refs/heads/main/TREE.md)。（from: [酷安@一笔轻安](https://www.123865.com/s/gD58Vv-PFmHh)）
 
-- 提醒：文件内容总共 19w+ 行, 加载前请确保电脑性能强劲, 也可以在这里看 [精简版的文件目录树](https://raw.githubusercontent.com/realcwj/123Pan-Unlimited-Share/refs/heads/main/TREE_SHORT.md)
+- 提醒：目录树的文件内容总共**19w**+行，加载前请确保电脑性能强劲，也可以在这里看 [精简版的文件目录树](https://raw.githubusercontent.com/realcwj/123Pan-Unlimited-Share/refs/heads/main/TREE_SHORT.md)。
 
 - 分享的内容均存储在 [share](./share) 文件夹中。
 
@@ -405,7 +424,7 @@
 
 ### 分享的文件是否会过期？
 
-- 永不过期。
+- 使用本项目分享的文件**理论上永不过期**。由于本项目的分享原理是记录文件的 Hash，因此，只要123云盘的服务器中存在源文件，分享将永久有效。
 
 ## License
 
