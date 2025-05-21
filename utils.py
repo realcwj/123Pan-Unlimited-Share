@@ -25,7 +25,7 @@ def makeAbsPath(fullDict, parentFileId=0, debug=False):
 def anonymizeId(itemsList):
     RESULT = []
     MAP_ID = {}
-    count = 0 # 改成别的都行, 但不能在任何时候为0, 否则会和根目录(0)冲突
+    count = 0
     # 第一遍: 遍历所有的item.get("FileId")(包含文件和文件夹), 构建映射表
     for item in tqdm(itemsList, desc="匿名化ID, 构建映射表"):
         if item.get("FileId") not in MAP_ID:
