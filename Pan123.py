@@ -435,7 +435,8 @@ class Pan123:
         # 生成路径
         self.listShareVisited = makeAbsPath(
             fullDict=self.listShareVisited,
-            parentFileId=parentFileId
+            parentFileId=parentFileId,
+            debug=self.debug
         )
         
         # 清洗数据
