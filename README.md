@@ -120,6 +120,8 @@
 
     随后，耐心等待程序运行，运行速度取决于接收的文件总数。
 
+- **提示：导入文件数量过多，速度会比较慢，此时建议本地部署运行，可以实时查看进度。例如，导入5000个文件大约需要30分钟。您也可以关闭网页，导入过程会在后台继续进行。**
+
 <p align="center">
   <img src="images/import_result.png" style="max-width: 80%; height: auto;">
 </p>
@@ -128,7 +130,7 @@
   <img src="images/import_check.png" style="max-width: 80%; height: auto;">
 </p>
 
-5. `从分享链接导出` 功能
+1. `从分享链接导出` 功能
 
 <p align="center">
   <img src="images/link_page.png" style="max-width: 80%; height: auto;">
