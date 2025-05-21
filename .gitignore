@@ -5,3 +5,4 @@ __pycache__
 /*.123share
 /*.json
 /test
+/uploads/*

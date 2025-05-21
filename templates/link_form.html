@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>从分享链接导出 - Pan123</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container main-container">
+        <div class="blur-backdrop"></div>
+        <div class="content-card shadow">
+             <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="card-title">从分享链接导出</h2>
+                <a href="{{ url_for('index') }}" class="btn btn-sm btn-outline-secondary">返回首页</a>
+            </div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <form action="{{ url_for('link_form') }}" method="POST">
+                <div class="mb-3">
+                    <label for="shareKey" class="form-label">分享链接 Key</label>
+                    <input type="text" class="form-control" id="shareKey" name="shareKey" placeholder="例如: abcd-efg" required>
+                    <div class="form-text">从分享链接中提取 (例如 https://www.xxxx.com/s/<b>abcd-efg</b>)</div>
+                </div>
+                <div class="mb-3">
+                    <label for="sharePwd" class="form-label">分享密码 (提取码)</label>
+                    <input type="text" class="form-control" id="sharePwd" name="sharePwd" placeholder="例如: ABCD (可留空)">
+                </div>
+                <div class="mb-3">
+                    <label for="parentFileId" class="form-label">分享文件夹ID</label>
+                    <input type="text" class="form-control" id="parentFileId" name="parentFileId" value="0" placeholder="整个分享链接内容填 0">
+                    <div class="form-text">如果要导出整个分享链接的内容，填 0。</div>
+                </div>
+                <div class="mb-3">
+                    <label for="saveFilename" class="form-label">导出文件名</label>
+                    <input type="text" class="form-control" id="saveFilename" name="saveFilename" value="shared_link_data.123share" placeholder="例如: shared_files.123share">
+                    <div class="form-text">导出的文件将以此名称提供下载。请使用 `.123share` 后缀。</div>
+                </div>
+                <button type="submit" class="btn btn-info custom-btn w-100">从链接导出</button>
+            </form>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

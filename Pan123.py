@@ -222,6 +222,8 @@ class Pan123:
         with open(savePath, "wb") as f:
             f.write(base64.b64encode(json.dumps(ALL_ITEMS, ensure_ascii=False).encode("utf-8")))
         print(f"导出完成, 保存到: {savePath}")
+        
+        return True
     
     def createFolder(self, parentFileId, folderName):
         body = {
@@ -345,6 +347,8 @@ class Pan123:
                 size = item.get("Size")
             )
         print(f"导入完成, 保存到123网盘根目录中的: >>> {rootFolderName} <<< 文件夹")
+        
+        return True
     
     def listShare(self, parentFileId, shareKey, sharePwd):
         
@@ -472,3 +476,5 @@ class Pan123:
         with open(savePath, "wb") as f:
             f.write(base64.b64encode(json.dumps(ALL_ITEMS, ensure_ascii=False).encode("utf-8")))
         print(f"导出完成, 保存到: {savePath}")
+        
+        return True

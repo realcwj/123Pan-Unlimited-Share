@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>操作结果 - Pan123</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container main-container">
+        <div class="blur-backdrop"></div>
+        <div class="content-card shadow text-center">
+            <h2 class="card-title mb-4">操作结果</h2>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message_text in messages %}
+                        <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                            {{ message_text }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            {% if message %} {# Successful operation message #}
+                <p class="lead result-message">{{ message }}</p>
+            {% elif error_message %} {# Custom error message for result page #}
+                 <p class="lead result-message text-danger">{{ error_message }}</p>
+            {% endif %}
+
+            {% if download_link %}
+                <div class="d-grid gap-2 col-lg-8 col-md-10 mx-auto my-4 download-button-container">
+                    <a href="{{ download_link }}" class="btn btn-success btn-lg custom-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-download me-2" viewBox="0 0 16 16">
+                          <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5"/>
+                          <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708z"/>
+                        </svg>
+                        点击下载文件
+                    </a>
+                </div>
+            {% endif %}
+
+            {% if console_log is defined and console_log is not none %}
+            <div class="mt-4 text-start"> {# text-start for left alignment of the pre content #}
+                <h5>控制台输出:</h5>
+                <pre class="console-output p-3 rounded">{{ console_log }}</pre>
+            </div>
+            {% endif %}
+
+            {% if show_home_button %}
+                <div class="mt-4">
+                    <a href="{{ url_for('index') }}" class="btn btn-primary custom-btn">返回首页</a>
+                </div>
+            {% endif %}
+
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
