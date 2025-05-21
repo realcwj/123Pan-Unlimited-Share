@@ -6,7 +6,13 @@ if __name__ == "__main__":
     mode = "import"
 
     # 【所有模式需要填写】文件位置
-    filePath = "./share/result.123share"
+    #   建议填写完整路径：
+    #   Windows系统（示例）:
+    #       filePath = r"D:\123Pan-Unlimited-Share\share\result.123share"
+    #                  ^ 注意这里有个r
+    #   Linux系统（示例）:
+    #       filePath = "/home/xxx/123Pan-Unlimited-Share/share/result.123share" 
+    filePath = r"D:\123Pan-Unlimited-Share\share\result.123share"
 
     # 【仅export/import模式需要填写】手机号/邮箱
     username = "13566668888"

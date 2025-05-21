@@ -62,16 +62,25 @@
 2. 修改 `run.py` 的内容
 
     ```python
-    # 手机号/邮箱
-    username = "13588886666"
-    # 密码
-    password = "123456"
+    # 模式："export" (从私人网盘分享)
+    mode = "import"
+
     # 文件位置
-    filePath = "./result.123share"
-    # 模式
-    mode = "export"
-    # 分享文件才需要的参数：文件夹ID (如果要分享整个网盘，填 0 )
-    homeFilePath = 0 # 如果分享整个网盘, 速度会很慢
+    #   建议填写完整路径：
+    #   Windows系统（示例）:
+    #       filePath = r"D:\123Pan-Unlimited-Share\share\result.123share"
+    #                  ^ 注意引号前面有个r
+    #   Linux系统（示例）:
+    #       filePath = "/home/xxx/123Pan-Unlimited-Share/share/result.123share" 
+    filePath = r"D:\123Pan-Unlimited-Share\share\result.123share"
+
+    # 手机号/邮箱
+    username = "13566668888"
+    # 密码
+    password = "ABCDabcd1234"
+
+    # 要分享的文件夹ID (如果要分享整个网盘，填 0 , 但是速度会很慢)
+    homeFilePath = 0
     ```
 
     - `homeFilePath` 可以通过 123 云盘的网页版获取 （见下方 [FAQ](#FAQ)）
@@ -97,7 +106,7 @@
     获取文件列表中：parentFileId: xxxxxxxx
     获取文件列表中：parentFileId: xxxxxxxx
     获取文件列表中：parentFileId: xxxxxxxx
-    导出完成, 保存到: ./result.123share
+    导出完成, 保存到: D:\123Pan-Unlimited-Share\share\result.123share
     导出成功
     ```
 
@@ -108,23 +117,31 @@
 1. 修改 `run.py` 的内容
 
     ```python
+    # 模式："link" (从分享链接导出)
+    mode = "link"
+
+    # 文件位置
+    #   建议填写完整路径：
+    #   Windows系统（示例）:
+    #       filePath = r"D:\123Pan-Unlimited-Share\share\result.123share"
+    #                  ^ 注意这里有个r
+    #   Linux系统（示例）:
+    #       filePath = "/home/xxx/123Pan-Unlimited-Share/share/result.123share" 
+    filePath = r"D:\123Pan-Unlimited-Share\share\result.123share"
+
     # 示例分享链接：
     # https://www.******.com/s/abcd-efg
     # 提取码：ABCD
-    # parentFileId = "0"        # 根目录填 0 , 如需分享指定目录要从浏览器F12获取
+    # parentFileId = "0"        # 根目录填 0 , 如需分享指定目录需要从浏览器F12获取
     # shareKey = "abcd-efg"
     # sharePwd = "ABCD"
 
-    # 模式
-    mode = "link"
-    # 分享文件夹ID (如果要导出整个分享链接内容，填 0)
+    # 分享文件夹ID (如果要导出整个分享链接的内容，填 0)
     parentFileId = "0"
     # 分享链接
     shareKey = "abcd-efg"
     # 分享密码
     sharePwd = "ABCD"
-    # 文件位置
-    filePath = "./result.123share"
     ```
 
 2. 运行 `run.py`
@@ -139,10 +156,10 @@
 
     ```shell
     (py312) d:\123Pan-Unlimited-Share>python run.py
-    获取文件列表中：parentFileId: 19658016
+    获取文件列表中：parentFileId: xxxxxxxx
     100%|█████████████████████| 1/1 [00:00<?, ?it/s]
     100%|█████████████████████| 1/1 [00:00<?, ?it/s]
-    导出完成, 保存到: ./result.123share
+    导出完成, 保存到: D:\123Pan-Unlimited-Share\share\result.123share
     ```
 
 5. 分享 `result.123share` 文件给他人
@@ -152,14 +169,22 @@
 1. 修改 `run.py` 的内容
 
     ```python
-    # 手机号/邮箱
-    username = "13588886666"
-    # 密码
-    password = "123456"
-    # 文件位置
-    filePath = "./result.123share"
-    # 模式："export" (分享) 或 "import" (导入)
+    # 模式："import" (导入)
     mode = "import"
+
+    # 文件位置
+    #   建议填写完整路径：
+    #   Windows系统（示例）:
+    #       filePath = r"D:\123Pan-Unlimited-Share\share\result.123share"
+    #                  ^ 注意这里有个r
+    #   Linux系统（示例）:
+    #       filePath = "/home/xxx/123Pan-Unlimited-Share/share/result.123share" 
+    filePath = r"D:\123Pan-Unlimited-Share\share\result.123share"
+
+    # 手机号/邮箱
+    username = "13566668888"
+    # 密码
+    password = "ABCDabcd1234"
     ```
 
 2. 运行 `run.py`
@@ -228,7 +253,7 @@
 
 ### 是否会泄露我的隐私?
 
-    本项目不会泄露你的隐私，项目代码也已开源，供大家查看。
+- 本项目不会泄露你的隐私，项目代码也已开源，供大家查看。
 
 ### 是否有分享的文件大小/数量限制？
 
