@@ -3,21 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pan123 Web 工具 - 选择模式</title>
+    <title>Pan123 Web 工具 - GitHub@realcwj</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .github-link {
+            display: inline-flex; /* 使图标和文字在同一行并能垂直对齐 */
+            align-items: center; /* 垂直居中对齐图标和文字 */
+            color: #555; /* 链接颜色 */
+            text-decoration: none; /* 去除下划线 */
+            margin-bottom: 1.5rem; /* 与下方按钮的间距 */
+            font-size: 0.9rem;
+        }
+        .github-link .bi-github {
+            margin-right: 8px; /* 图标和文字之间的间距 */
+            font-size: 1.2rem; /* 图标大小 */
+        }
+        .github-link:hover {
+            color: #000; /* 鼠标悬停时颜色变深 */
+            text-decoration: underline; /* 鼠标悬停时显示下划线 */
+        }
+    </style>
 </head>
 <body>
     <div class="container main-container">
         <div class="blur-backdrop"></div>
         <div class="content-card shadow">
-            <h1 class="text-center mb-4">Pan123 Web 工具</h1>
-            <p class="text-center mb-5">请选择您要进行的操作模式：</p>
+            <h1 class="text-center mb-2">Pan123 Web 工具</h1>
+            <div class="text-center">
+                <a href="https://github.com/realcwj/123Pan-Unlimited-Share" target="_blank" class="github-link">
+                    <i class="bi bi-github"></i> https://github.com/realcwj/123Pan-Unlimited-Share
+                </a>
+            </div>
+            <p class="text-center mb-4">请选择模式</p>
 
             {% with messages = get_flashed_messages(with_categories=true) %}
                 {% if messages %}
                     {% for category, message in messages %}
-                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
                             {{ message }}
                             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                         </div>
@@ -26,27 +50,15 @@
             {% endwith %}
 
             <form action="{{ url_for('select_mode') }}" method="POST">
-                <div class="d-grid gap-3">
-                    <button type="submit" name="mode" value="export" class="btn btn-primary btn-lg custom-btn">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-box-arrow-up-right me-2" viewBox="0 0 16 16">
-                            <path fill-rule="evenodd" d="M8.636 3.5a.5.5 0 0 0-.5-.5H1.5A1.5 1.5 0 0 0 0 4.5v10A1.5 1.5 0 0 0 1.5 16h10a1.5 1.5 0 0 0 1.5-1.5V7.864a.5.5 0 0 0-1 0V14.5a.5.5 0 0 1-.5.5h-10a.5.5 0 0 1-.5-.5v-10a.5.5 0 0 1 .5-.5h6.636a.5.5 0 0 0 .5-.5"/>
-                            <path fill-rule="evenodd" d="M16 .5a.5.5 0 0 0-.5-.5h-5a.5.5 0 0 0 0 1h3.793L6.146 9.146a.5.5 0 1 0 .708.708L15 1.707V5.5a.5.5 0 0 0 1 0z"/>
-                        </svg>
-                        从私人网盘导出
+                <div class="d-grid gap-3 index-buttons">
+                    <button type="submit" name="mode" value="export" class="btn btn-primary custom-btn">
+                        <i class="bi bi-box-arrow-up-right me-2"></i> 从私人网盘导出
                     </button>
-                    <button type="submit" name="mode" value="import" class="btn btn-success btn-lg custom-btn">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-box-arrow-in-down-left me-2" viewBox="0 0 16 16">
-                            <path fill-rule="evenodd" d="M14.5 2.5a.5.5 0 0 0-.5-.5h-6a.5.5 0 0 0 0 1h4.793L2.146 13.146a.5.5 0 0 0 .708.708L13 3.707V8.5a.5.5 0 0 0 1 0z"/>
-                            <path fill-rule="evenodd" d="M1.5 13a.5.5 0 0 0 .5.5h10a.5.5 0 0 0 .5-.5v-1a.5.5 0 0 0-1 0v.5H2.5V3.5h1a.5.5 0 0 0 0-1h-1A1.5 1.5 0 0 0 0 3.5v10A1.5 1.5 0 0 0 1.5 13"/>
-                        </svg>
-                        导入到私人网盘
+                    <button type="submit" name="mode" value="import" class="btn btn-primary custom-btn">
+                        <i class="bi bi-box-arrow-in-down me-2"></i> 导入到私人网盘
                     </button>
-                    <button type="submit" name="mode" value="link" class="btn btn-info btn-lg custom-btn">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-link-45deg me-2" viewBox="0 0 16 16">
-                            <path d="M4.715 6.542 3.343 7.914a3 3 0 1 0 4.243 4.243l1.828-1.829A3 3 0 0 0 8.586 5.5L8 6.086a1 1 0 0 0-.154.199 2 2 0 0 1 .861 3.337L6.88 11.45a2 2 0 1 1-2.83-2.83l.793-.792a4 4 0 0 1-.128-1.287z"/>
-                            <path d="M6.586 4.672A3 3 0 0 0 7.414 9.5l.775-.776a2 2 0 0 1-.896-3.346L9.12 3.55a2 2 0 1 1 2.83 2.83l-.793.792c.112.42.155.855.128 1.287l1.372-1.372a3 3 0 1 0-4.243-4.243z"/>
-                        </svg>
-                        从分享链接导出
+                    <button type="submit" name="mode" value="link" class="btn btn-primary custom-btn">
+                        <i class="bi bi-link-45deg me-2"></i> 从分享链接导出
                     </button>
                 </div>
             </form>

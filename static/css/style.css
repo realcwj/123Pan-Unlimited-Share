@@ -129,9 +129,7 @@ body {
 
 /* 首页模式选择按钮的特定颜色 (如果需要区分) */
 /* 如果所有按钮都是深蓝色，可以移除这些，让 .custom-btn 接管 */
-.index-buttons .btn-primary.custom-btn { /* 示例: 导出 */
-    /* 保持深蓝色，由 .custom-btn 定义 */
-}
+
 .index-buttons .btn-success.custom-btn { /* 示例: 导入 - 可以改为深蓝色，或保留主题色 */
     background-color: #198754; /* Bootstrap success color */
     border-color: #198754;
@@ -177,10 +175,6 @@ body {
 /* 表单组间距调整 */
 .form-group, .mb-3 { /* Bootstrap mb-3 class or a custom form-group */
     margin-bottom: 1.75rem !important; /* 增加表单项之间的垂直间距 */
-}
-/* 最后一个表单组之后的按钮，间距由按钮的 margin-top 控制 */
-.form-group:last-of-type, .mb-3:last-of-type {
-    /* margin-bottom: 0; */ /* 如果不希望最后一个元素有底部外边距 */
 }
 
 /* 文件输入框美化 */

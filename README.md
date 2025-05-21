@@ -27,10 +27,16 @@
   - [这个项目能做什么？](#这个项目能做什么)
   - [目录](#目录)
   - [如何使用？](#如何使用)
-    - [准备](#准备)
-    - [从个人网盘分享文件](#从个人网盘分享文件)
-    - [从分享链接导出文件](#从分享链接导出文件)
-    - [接收文件](#接收文件)
+    - [使用在线部署的可视化界面（网页）](#使用在线部署的可视化界面网页)
+      - [使用教程](#使用教程)
+    - [【推荐】本地部署可视化界面（网页）](#推荐本地部署可视化界面网页)
+      - [一、准备](#一准备)
+      - [二、启动](#二启动)
+    - [【推荐】本地运行 Python 脚本](#推荐本地运行-python-脚本)
+      - [一、准备](#一准备-1)
+      - [二、从个人网盘分享文件](#二从个人网盘分享文件)
+      - [三、从分享链接导出文件](#三从分享链接导出文件)
+      - [四、接收文件](#四接收文件)
   - [目前分享了哪些文件？](#目前分享了哪些文件)
   - [原理是啥？怎么实现的？](#原理是啥怎么实现的)
   - [FAQ](#faq)
@@ -43,19 +49,149 @@
 
 ## 如何使用？
 
-### 准备
+- **⚠️重要提示：推荐本地部署网页/本地运行Python脚本，尽量避免使用他人搭建的网页，你永远不知道别人会不会在后台记录你的账号密码！**
 
-0. 安装 `Python`
+### 使用在线部署的可视化界面（网页）
 
-1. 下载本项目
+- 已在这里 [http://222.186.21.40:33333/](http://222.186.21.40:33333/) 搭建了一个网页版，供大家使用。
 
-2. 安装依赖
+- **服务器很渣，大家轻点用，千万别给我上DDOS🥺**
+
+#### 使用教程
+
+1. 打开网页 [http://222.186.21.40:33333/](http://222.186.21.40:33333/)
+
+2. 主界面如下
+
+<p align="center">
+  <img src="images/home_page.png" style="max-width: 80%; height: auto;">
+</p>
+
+3. `从私人网盘导出` 功能
+
+<p align="center">
+  <img src="images/export_page.png" style="max-width: 80%; height: auto;">
+</p>
+
+- **手机号/邮箱**：填写你123云盘的手机号/邮箱
+
+- **密码**：填写你123云盘的密码
+
+- **分享的文件夹ID**：填写你要分享的文件夹的ID，参考 [FAQ](#faq)
+
+- **导出文件名**：填写你要导出的文件名（例如：`ABC.123share`，后续导入时，会以 `ABC` 作为导入的根目录文件名）
+
+    随后，耐心等待程序运行，运行速度取决于分享的文件总数，并将输出的文件分享给他人。
+
+<p align="center">
+  <img src="images/export_result.png" style="max-width: 80%; height: auto;">
+</p>
+
+4. `导入到私人网盘` 功能
+
+<p align="center">
+  <img src="images/import_page.png" style="max-width: 80%; height: auto;">
+</p>
+
+- **手机号/邮箱**：填写你123云盘的手机号/邮箱
+
+- **密码**：填写你123云盘的密码
+
+- **选择 .123share 文件**：选择你要导入的 `*.123share` 文件。注意：文件名中的 `*` 部分会作为导入的根目录文件名
+
+    随后，耐心等待程序运行，运行速度取决于接收的文件总数。
+
+<p align="center">
+  <img src="images/import_result.png" style="max-width: 80%; height: auto;">
+</p>
+
+<p align="center">
+  <img src="images/import_check.png" style="max-width: 80%; height: auto;">
+</p>
+
+5. `从分享链接导出` 功能
+
+<p align="center">
+  <img src="images/link_page.png" style="max-width: 80%; height: auto;">
+</p>
+
+- **分享链接 Key**：例如，分享链接：`https://www.123456.com/s/abcd-efg`，此处填写末尾的 `abcd-efg` 部分
+
+- **分享密码**：填写分享密码，如果没有密码就不填
+
+- **导出文件名**：填写你要导出的文件名（例如：`ABC.123share`，后续导入时，会以 `ABC` 作为导入的根目录文件名）
+
+    随后，耐心等待程序运行，运行速度取决于分享的文件总数，并将输出的文件分享给他人。
+
+<p align="center">
+  <img src="images/link_result.png" style="max-width: 80%; height: auto;">
+</p>
+
+### 【推荐】本地部署可视化界面（网页）
+
+#### 一、准备
+
+1. 安装 `Python`
+
+2. 下载本项目
+
+3. 安装依赖
+
+    ```shell
+    pip install tqdm requests flask
+    ```
+
+4. 修改 `web.py` 的内容（可跳过本步骤）
+
+    ```python
+    # 如果要自己部署，请修改这里的加密密钥
+    app.secret_key = '114514'
+    # 最大文件大小 (单位：字节)
+    app.config['MAX_CONTENT_LENGTH'] = 1024 * 1024 * 10 # 这里是10MB
+    # 运行端口
+    app.run(debug=DEBUG, host='0.0.0.0', port=33333) # 这里是 33333 端口
+    ```
+
+#### 二、启动
+
+1. 运行 `web.py`
+
+    ```shell
+    python web.py
+    ```
+
+2. 控制台窗口长这样
+
+    ```shell
+    (py312) d:\123Pan-Unlimited-Share>python web.py
+    * Serving Flask app 'web'
+    * Debug mode: off
+    WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+    * Running on all addresses (0.0.0.0)
+    * Running on http://127.0.0.1:33333
+    * Running on http://198.18.0.1:33333
+    Press CTRL+C to quit
+    ```
+
+3. 打开浏览器，访问 `{host}:{port}`, 例如：`http://127.0.0.1:33333`
+
+4. 网页内的操作同上
+
+### 【推荐】本地运行 Python 脚本
+
+#### 一、准备
+
+1. 安装 `Python`
+
+2. 下载本项目
+
+3. 安装依赖
 
     ```shell
     pip install tqdm requests
     ```
 
-### 从个人网盘分享文件
+#### 二、从个人网盘分享文件
 
 1. **请确保所有文件都已上传到123云盘**
 
@@ -112,7 +248,7 @@
 
 6. 分享 `result.123share` 文件给他人
 
-### 从分享链接导出文件
+#### 三、从分享链接导出文件
 
 1. 修改 `run.py` 的内容
 
@@ -164,7 +300,7 @@
 
 5. 分享 `result.123share` 文件给他人
 
-### 接收文件
+#### 四、接收文件
 
 1. 修改 `run.py` 的内容
 
