@@ -31,7 +31,7 @@ if __name__ == "__main__":
     # sharePwd = "ABCD"
 
     # 【仅link模式需要填写】分享文件夹ID (如果要导出整个分享链接的内容，填 0)
-    parentFileId = "0"
+    parentFileId = 0
     # 【仅link模式需要填写】分享链接
     shareKey = "abcd-efg"
     # 【仅link模式需要填写】分享密码
