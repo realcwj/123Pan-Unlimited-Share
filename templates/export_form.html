@@ -52,13 +52,22 @@
                 <div id="shareCodeArea" style="display: none;">
                     <p><strong>您的分享码是：</strong></p>
                     <textarea id="shareCodeOutput" class="form-control" rows="3" readonly></textarea>
-                    <button id="downloadShareCodeBtn" class="btn btn-success mt-2 custom-btn">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-download me-2" viewBox="0 0 16 16">
-                          <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5"/>
-                          <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708z"/>
-                        </svg>
-                        下载分享文件 (.123share)
-                    </button>
+                    <div class="d-flex gap-2 mt-2 share-actions-toolbar">
+                        <button id="downloadShareCodeBtn" class="btn btn-primary custom-btn flex-fill">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-download me-2" viewBox="0 0 16 16">
+                              <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5"/>
+                              <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708z"/>
+                            </svg>
+                            下载分享文件 (.123share)
+                        </button>
+                        <button id="copyShareCodeBtn" type="button" class="btn btn-secondary flex-fill">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-clipboard me-1" viewBox="0 0 16 16">
+                              <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+                              <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
+                            </svg>
+                            复制分享码
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -95,8 +104,8 @@
             const shareCodeArea = document.getElementById('shareCodeArea');
             const shareCodeOutput = document.getElementById('shareCodeOutput');
             const downloadShareCodeBtn = document.getElementById('downloadShareCodeBtn');
+            const copyShareCodeBtn = document.getElementById('copyShareCodeBtn'); 
 
-            // Load credentials from cookies
             const savedUsername = getCookie('username');
             const savedPassword = getCookie('password');
             if (savedUsername) {
@@ -106,7 +115,7 @@
                 document.getElementById('password').value = savedPassword;
             }
             
-            let finalShareData = null;
+            let finalShareData = null; // This will store the base64 string
             let finalFilename = "exported_data.123share";
 
             exportForm.addEventListener('submit', async function (event) {
@@ -115,7 +124,7 @@
                 logOutput.textContent = '';
                 shareCodeArea.style.display = 'none';
                 statusMessage.textContent = '';
-                statusMessage.className = 'alert'; // Reset class
+                statusMessage.className = 'alert'; 
                 finalShareData = null;
 
                 const username = document.getElementById('username').value;
@@ -124,9 +133,8 @@
                 const homeFilePath = document.getElementById('homeFilePath').value;
                 const shareProject = document.getElementById('shareProject').checked;
 
-                // Save credentials to cookies
-                setCookie('username', username, 30); // Save for 30 days
-                setCookie('password', password, 30); // Save for 30 days
+                setCookie('username', username, 30); 
+                setCookie('password', password, 30); 
 
                 const payload = {
                     username: username,
@@ -142,6 +150,7 @@
                 } else {
                     finalFilename = `${timestamp}.123share`;
                 }
+                finalFilename = finalFilename.replace(/[^a-zA-Z0-9_.\-\u4e00-\u9fa5()]/g, '_');
 
                 try {
                     const response = await fetch("{{ url_for('api_export') }}", {
@@ -173,20 +182,20 @@
                         
                         buffer += decoder.decode(value, { stream: true });
                         const lines = buffer.split('\n');
-                        buffer = lines.pop(); // Keep the last partial line
+                        buffer = lines.pop(); 
 
                         for (const line of lines) {
                             if (line.trim() === '') continue;
                             try {
                                 const jsonData = JSON.parse(line);
                                 logOutput.textContent += `${jsonData.message}\n`;
-                                logOutput.scrollTop = logOutput.scrollHeight; // Auto-scroll
+                                logOutput.scrollTop = logOutput.scrollHeight; 
 
                                 if (jsonData.isFinish === true) {
                                     statusMessage.textContent = '导出成功完成！';
                                     statusMessage.classList.remove('alert-info', 'alert-danger');
                                     statusMessage.classList.add('alert-success');
-                                    finalShareData = jsonData.message; // This is b64 string
+                                    finalShareData = jsonData.message; 
                                     shareCodeOutput.value = finalShareData;
                                     shareCodeArea.style.display = 'block';
                                 } else if (jsonData.isFinish === false) {
@@ -200,7 +209,6 @@
                             }
                         }
                     }
-                     // Process any remaining data in buffer
                     if (buffer.trim() !== '') {
                         try {
                             const jsonData = JSON.parse(buffer);
@@ -236,15 +244,9 @@
             downloadShareCodeBtn.addEventListener('click', function() {
                 if (finalShareData) {
                     try {
-                        // finalShareData 是后端返回的 base64 编码的字符串
-                        // 需要将其解码为 Uint8Array 以创建 Blob
-                        const byteCharacters = atob(finalShareData);
-                        const byteNumbers = new Array(byteCharacters.length);
-                        for (let i = 0; i < byteCharacters.length; i++) {
-                            byteNumbers[i] = byteCharacters.charCodeAt(i);
-                        }
-                        const byteArray = new Uint8Array(byteNumbers);
-                        const blob = new Blob([byteArray], { type: 'application/octet-stream' });
+                        // finalShareData is the URL-safe base64 string.
+                        // We want to download this string as the content of the file.
+                        const blob = new Blob([finalShareData], { type: 'application/octet-stream' }); // Content is the base64 string itself
                         
                         const link = document.createElement('a');
                         link.href = URL.createObjectURL(blob);
@@ -259,6 +261,27 @@
                     }
                 } else {
                     alert('没有可下载的分享码数据。');
+                }
+            });
+
+            copyShareCodeBtn.addEventListener('click', function() {
+                if (shareCodeOutput.value) {
+                    navigator.clipboard.writeText(shareCodeOutput.value).then(function() {
+                        const originalButtonText = copyShareCodeBtn.innerHTML;
+                        copyShareCodeBtn.innerHTML = `
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check-lg me-1" viewBox="0 0 16 16">
+                                <path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425a.247.247 0 0 1 .02-.022z"/>
+                            </svg>
+                            已复制!`;
+                        setTimeout(() => {
+                            copyShareCodeBtn.innerHTML = originalButtonText;
+                        }, 2000);
+                    }, function(err) {
+                        console.error('复制失败: ', err);
+                        alert('复制分享码失败，您的浏览器可能不支持或权限不足。请尝试手动复制。');
+                    });
+                } else {
+                    alert('没有可复制的分享码。');
                 }
             });
         });

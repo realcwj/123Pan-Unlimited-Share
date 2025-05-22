@@ -76,8 +76,7 @@
                 </div>
 
                 <div class="form-text">提示：导入文件数量较多时，速度会比较慢，请耐心等待。</div>
-                <button type="submit" class="btn btn-success custom-btn w-100 mt-3">开始导入</button>
-            </form>
+                <button type="submit" class="btn btn-primary custom-btn w-100 mt-3">开始导入</button> </form>
 
             <div id="resultArea" class="mt-4" style="display: none;">
                 <h5>操作日志:</h5>
@@ -139,30 +138,68 @@
                     const reader = new FileReader();
                     reader.onload = function(e) {
                         try {
-                            // content is ArrayBuffer, convert to base64 string
-                            const binary = e.target.result;
-                            const base64String = btoa(new Uint8Array(binary).reduce((data, byte) => data + String.fromCharCode(byte), ''));
-                            base64DataInput.value = base64String;
-                            
+                            // content is ArrayBuffer from readAsArrayBuffer
+                            // The server expects a URL-safe base64 string.
+                            // Pan123.py importFiles expects bytes, web.py api_import decodes the string.
+                            // Here, we need to send a string that will be decoded by urlsafe_b64decode.
+                            // So, the string from here must be URL-safe base64.
+                            // Standard btoa will produce standard base64. We might need to make it URL-safe.
+                            // However, the backend `Pan123.py` `importFiles` takes `base64Data` (bytes) and calls `json.loads(base64.urlsafe_b64decode(base64Data))`.
+                            // `web.py` `api_import` does `base64.urlsafe_b64decode(base64_data_str.encode('utf-8'))`.
+                            // So, `base64_data_str` from the client must be a URL-safe base64 string.
+                            // `btoa` produces standard base64. We need to convert it.
+                            // Or, better, if the file content IS already base64 (as .123share implies), read it as text.
+
+                            const fr = new FileReader();
+                            fr.onload = function(evt) {
+                                // evt.target.result is the file content as a string
+                                // Assuming the .123share file directly contains the base64 string
+                                base64DataInput.value = evt.target.result.trim();
+                                let fileName = file.name;
+                                if (fileName.toLowerCase().endsWith('.123share')) {
+                                    rootFolderNameInput.value = fileName.substring(0, fileName.length - '.123share'.length);
+                                } else {
+                                    rootFolderNameInput.value = fileName;
+                                }
+                            };
+                            fr.onerror = function() {
+                                alert("读取文件内容为文本时出错: " + fr.error);
+                                base64DataInput.value = '';
+                                rootFolderNameInput.value = '';
+                            };
+                            fr.readAsText(file); // Read as text, assuming it's already base64 encoded string
+
+                        } catch (err) {
+                            console.error("Error processing file:", err);
+                            alert("处理文件失败: " + err.message);
+                            base64DataInput.value = '';
+                            rootFolderNameInput.value = '';
+                        }
+                    };
+                    reader.onerror = function() { // This outer reader is not really used if we switch to readAsText
+                        alert("选择文件时出错。");
+                        base64DataInput.value = '';
+                        rootFolderNameInput.value = '';
+                    };
+                    // Trigger the inner FileReader
+                    if (file) { // Check file again just in case
+                         const textReader = new FileReader();
+                         textReader.onload = function(e_text) {
+                            base64DataInput.value = e_text.target.result.trim();
                             let fileName = file.name;
                             if (fileName.toLowerCase().endsWith('.123share')) {
                                 rootFolderNameInput.value = fileName.substring(0, fileName.length - '.123share'.length);
                             } else {
                                 rootFolderNameInput.value = fileName;
                             }
-                        } catch (err) {
-                            console.error("Error reading file:", err);
-                            alert("读取文件内容失败: " + err.message);
+                         };
+                         textReader.onerror = function() {
+                            alert("读取文件内容失败: " + textReader.error);
                             base64DataInput.value = '';
                             rootFolderNameInput.value = '';
-                        }
-                    };
-                    reader.onerror = function() {
-                        alert("读取文件失败: " + reader.error);
-                        base64DataInput.value = '';
-                        rootFolderNameInput.value = '';
-                    };
-                    reader.readAsArrayBuffer(file); // Read as ArrayBuffer
+                         };
+                         textReader.readAsText(file); // Read .123share file as text
+                    }
                 }
             });
 
@@ -185,7 +222,7 @@
                 const payload = {
                     username: username,
                     password: password,
-                    base64Data: base64Data,
+                    base64Data: base64Data, // This should be the URL-safe base64 string
                     rootFolderName: rootFolderName
                 };
 
@@ -300,7 +337,7 @@
             function renderPublicShares(shares) {
                 publicSharesListDiv.innerHTML = ''; // Clear current list
                 if (shares.length === 0) {
-                    publicSharesListDiv.innerHTML = '<p class="text-muted text-center">没有匹配的公共资源。</p>';
+                    publicSharesListDiv.innerHTML = '<p class="text-muted text-center">沒有匹配的公共资源。</p>';
                     return;
                 }
                 shares.forEach(share => {
@@ -309,6 +346,7 @@
                     item.textContent = share.name; // Display the name (filename without extension)
                     item.dataset.filename = share.filename; // Store full filename
                     item.addEventListener('click', async function() {
+                        // 当点击公共资源项时，确保传递的是未编码的文件名
                         await loadPublicShareContent(share.filename);
                     });
                     publicSharesListDiv.appendChild(item);
@@ -331,6 +369,7 @@
                 logOutput.textContent = ''; // Clear logs
 
                 try {
+                    // encodeURIComponent确保包含特殊字符（如中文）的文件名能正确作为URL参数传递
                     const response = await fetch(`{{ url_for('get_public_share_content') }}?filename=${encodeURIComponent(filename)}`);
                     const data = await response.json();
                     if (data.success) {

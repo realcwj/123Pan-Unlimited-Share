@@ -9,7 +9,7 @@ from werkzeug.utils import secure_filename # 仅用于资源共享计划的文�
 from Pan123 import Pan123
 
 # DEBUG = True # 开发时可以设为 True
-DEBUG = False
+DEBUG = True
 
 app = Flask(__name__)
 app.secret_key = '114514_new_secret_key_for_updates' # 建议更新密钥

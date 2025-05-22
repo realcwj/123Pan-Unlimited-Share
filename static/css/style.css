@@ -5,6 +5,9 @@
     --card-background: rgba(255, 255, 255, 0.9); /* 卡片背景，轻微透明以配合高斯模糊 */
     --primary-dark-blue: #0056b3; /* 深蓝色按钮基色 */
     --primary-dark-blue-hover: #004494; /* 深蓝色按钮悬停色 */
+    --button-active-green: #198754; /* 按钮按下时的绿色 (Bootstrap success) */
+    --button-active-green-border: #146c43; /* 按钮按下时绿色边框 */
+    --button-active-green-shadow: rgba(25, 135, 84, 0.3); /* 按钮按下时绿色阴影 */
     --text-color: #333;
     --border-color: #b0dfff; /* 卡片和输入框边框颜色，与背景协调 */
     --card-shadow: 0 10px 30px rgba(0, 70, 120, 0.15); /* 更柔和自然的阴影 */
@@ -97,7 +100,7 @@ body {
     margin-bottom: 1rem; /* 按钮之间的垂直间距 */
 }
 
-/* 通用按钮样式 - 深蓝色 */
+/* 通用按钮样式 - 主要操作按钮 */
 .custom-btn {
     background-color: var(--primary-dark-blue);
     border-color: var(--primary-dark-blue);
@@ -110,8 +113,11 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 100%; /* 按钮默认宽度为100% */
-    margin-top: 1.5rem; /* 按钮与其上方元素的间距 */
+    margin-top: 1.5rem; 
+}
+
+.custom-btn.w-100 {
+    width: 100%;
 }
 
 .custom-btn:hover, .custom-btn:focus {
@@ -123,47 +129,27 @@ body {
 }
 
 .custom-btn:active {
+    background-color: var(--button-active-green) !important; 
+    border-color: var(--button-active-green-border) !important; 
+    color: white !important;
     transform: translateY(0);
-    box-shadow: 0 3px 6px rgba(0, 68, 148, 0.2);
-}
-
-/* 首页模式选择按钮的特定颜色 (如果需要区分) */
-/* 如果所有按钮都是深蓝色，可以移除这些，让 .custom-btn 接管 */
-
-.index-buttons .btn-success.custom-btn { /* 示例: 导入 - 可以改为深蓝色，或保留主题色 */
-    background-color: #198754; /* Bootstrap success color */
-    border-color: #198754;
-}
-.index-buttons .btn-success.custom-btn:hover {
-    background-color: #157347;
-    border-color: #146c43;
-}
-.index-buttons .btn-info.custom-btn { /* 示例: 链接 - 可以改为深蓝色，或保留主题色 */
-    background-color: #0dcaf0; /* Bootstrap info color */
-    border-color: #0dcaf0;
-    color: #000; /* Info 按钮文字用深色对比 */
-}
-.index-buttons .btn-info.custom-btn:hover {
-    background-color: #0baccc;
-    border-color: #0aa1bf;
-    color: #000;
+    box-shadow: 0 3px 6px var(--button-active-green-shadow) !important;
 }
 
 .alert {
     border-radius: var(--border-radius-elements);
-    margin-top: 1.5rem; /* 提示框与上方元素的间距 */
-    padding: 1rem 1.25rem; /* 提示框内边距 */
+    margin-top: 1.5rem; 
+    padding: 1rem 1.25rem; 
 }
 
-/* 返回首页按钮 */
 .back-to-home {
-    display: inline-block; /* 允许设置边距和不占满整行 */
-    background-color: #6c757d; /* 次要按钮颜色 */
+    display: inline-block; 
+    background-color: #6c757d; 
     border-color: #6c757d;
     color: white;
     padding: 0.6rem 1rem;
     font-size: 0.9rem;
-    margin-bottom: 1.5rem; /* 与下方表单的间距 */
+    margin-bottom: 1.5rem; 
     border-radius: var(--border-radius-elements);
 }
 .back-to-home:hover {
@@ -172,25 +158,23 @@ body {
     color: white;
 }
 
-/* 表单组间距调整 */
-.form-group, .mb-3 { /* Bootstrap mb-3 class or a custom form-group */
-    margin-bottom: 1.75rem !important; /* 增加表单项之间的垂直间距 */
+.form-group, .mb-3 { 
+    margin-bottom: 1.75rem !important; 
 }
 
-/* 文件输入框美化 */
 input[type="file"].form-control {
-    padding-top: 0.5rem; /* 调整以适应按钮 */
+    padding-top: 0.5rem; 
     padding-bottom: 0.5rem;
 }
 
 input[type="file"]::file-selector-button {
-    padding: 0.7rem 1rem; /* 调整按钮大小 */
-    margin: -0.5rem -1.2rem; /* 调整以适应form-control的padding */
+    padding: 0.7rem 1rem; 
+    margin: -0.5rem -1.2rem; 
     margin-inline-end: 1.2rem;
     color: #fff;
     background-color: var(--primary-dark-blue);
     border-color: var(--primary-dark-blue);
-    border-radius: var(--border-radius-elements) 0 0 var(--border-radius-elements); /* 左侧圆角 */
+    border-radius: var(--border-radius-elements) 0 0 var(--border-radius-elements); 
     border: 0;
     transition: background-color .15s ease-in-out,border-color .15s ease-in-out;
     font-weight: 500;
@@ -201,7 +185,6 @@ input[type="file"]::file-selector-button:hover {
     border-color: var(--primary-dark-blue-hover);
 }
 
-/* Result Page specific styles */
 .result-message {
     font-size: 1.2rem;
     color: var(--text-color);
@@ -209,29 +192,50 @@ input[type="file"]::file-selector-button:hover {
 }
 
 .download-button-container {
-    margin: 2rem 0; /* 下载按钮与消息和返回首页按钮的间距 */
+    margin: 2rem 0; 
 }
 
-/* 响应式调整 */
+/* Styles for the Download and Copy button toolbar */
+.share-actions-toolbar {
+    margin-top: 0.75rem; /* Adjusted top margin for this specific toolbar */
+}
+
+.share-actions-toolbar .btn {
+    padding: 0.9rem 1.5rem; /* Match custom-btn padding for consistent height */
+    font-size: 1.05rem;     /* Match custom-btn font-size for consistent height */
+    /* flex-fill class in HTML will handle equal width distribution */
+    margin-top: 0; /* Override general .custom-btn or .btn margin-top if any was causing issues here */
+}
+/* Ensure icons within these buttons are vertically centered */
+.share-actions-toolbar .btn svg {
+    vertical-align: middle; /* Helps if text and icon alignment is off */
+}
+
 @media (max-width: 768px) {
     body {
-        padding: 10px; /* 手机端页面边缘 padding 减小 */
+        padding: 10px; 
     }
     .content-card {
-        padding: 25px 20px; /* 手机端卡片内边距减小 */
-        margin: 10px 0; /* 手机端卡片上下外边距 */
+        padding: 25px 20px; 
+        margin: 10px 0; 
     }
     .card-title {
-        font-size: 1.5rem; /* 手机端标题字号 */
+        font-size: 1.5rem; 
         margin-bottom: 1.5rem;
     }
-    .form-control, .custom-btn {
-        font-size: 0.95rem; /* 手机端输入框和按钮字号 */
-        padding: 0.8rem 1rem; /* 手机端输入框和按钮内边距调整 */
+    .form-control, .custom-btn, .btn-secondary { 
+        font-size: 0.95rem; 
+        padding: 0.8rem 1rem; 
     }
-    .custom-btn {
-        padding: 0.8rem 1.2rem;
+    .custom-btn.w-100 { 
+        padding: 0.8rem 1rem;
     }
+    /* Adjust share-actions-toolbar buttons for medium screens */
+    .share-actions-toolbar .btn {
+        font-size: 0.90rem; /* Slightly smaller font for medium screens if needed*/
+        padding: 0.8rem 1rem; /* Adjust padding accordingly */
+    }
+
     .form-group, .mb-3 {
         margin-bottom: 1.25rem !important;
     }
@@ -244,8 +248,8 @@ input[type="file"]::file-selector-button:hover {
 
 @media (max-width: 480px) {
     .content-card {
-        padding: 20px 15px; /* 更小屏幕上进一步减小卡片内边距 */
-        border-radius: 15px; /* 略微减小圆角 */
+        padding: 20px 15px; 
+        border-radius: 15px; 
     }
     .card-title {
         font-size: 1.3rem;
@@ -253,38 +257,47 @@ input[type="file"]::file-selector-button:hover {
     .form-label {
         font-size: 0.9rem;
     }
-    .form-control, .custom-btn {
+    .form-control, .custom-btn, .btn-secondary { 
         font-size: 0.9rem;
     }
+    /* Stack buttons in share-actions-toolbar on very small screens */
+    .share-actions-toolbar {
+        flex-direction: column;
+    }
+    .share-actions-toolbar .btn {
+        width: 100%; /* Make buttons full width when stacked */
+        margin-bottom: 0.5rem; /* Add some space between stacked buttons */
+    }
+    .share-actions-toolbar .btn:last-child {
+        margin-bottom: 0; /* No margin for the last button */
+    }
 }
-/* Styling for the console output PRE tag */
+
 .console-output {
-    background-color: #f0f0f0; /* Slightly darker than card, or #222 for dark mode feel */
-    color: #333; /* Text color, adjust if background is dark */
+    background-color: #f0f0f0; 
+    color: #333; 
     border: 1px solid var(--border-color, #ced4da);
     padding: 15px;
     border-radius: var(--border-radius-elements, 10px);
-    white-space: pre-wrap;       /* Preserves whitespace and wraps lines */
-    word-break: break-all;       /* Breaks long words to prevent overflow */
-    max-height: 400px;           /* Max height, becomes scrollable */
-    overflow-y: auto;            /* Adds vertical scrollbar if content exceeds max-height */
-    font-family: 'Consolas', 'Monaco', 'Lucida Console', monospace; /* Monospace font stack */
-    font-size: 0.85em;           /* Slightly smaller font size */
+    white-space: pre-wrap;       
+    word-break: break-all;       
+    max-height: 400px;           
+    overflow-y: auto;            
+    font-family: 'Consolas', 'Monaco', 'Lucida Console', monospace; 
+    font-size: 0.85em;           
     line-height: 1.5;
-    text-align: left;            /* Ensure text is left-aligned within pre */
+    text-align: left;            
 }
 
-/* Adjust lead message styling if needed */
 .result-message {
-    font-size: 1.1rem; /* Slightly smaller if preferred */
+    font-size: 1.1rem; 
     margin-bottom: 1.25rem;
 }
 .result-message.text-danger {
-    font-weight: 500; /* Make error messages slightly bolder */
+    font-weight: 500; 
 }
 
-/* Ensure download button container has enough space */
-.download-button-container {
+.download-button-container { 
     margin-top: 1.5rem;
     margin-bottom: 1.5rem;
 }
