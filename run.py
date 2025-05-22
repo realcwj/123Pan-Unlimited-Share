@@ -1,3 +1,4 @@
+import os
 from Pan123 import Pan123
 
 if __name__ == "__main__":
@@ -54,23 +55,36 @@ if __name__ == "__main__":
         )
     # 从个人网盘导出
     if mode == "export":
-        for currentState in driver.exportFiles(parentFileId=homeFilePath,
-                                               savePath=filePath): 
-            print(currentState)
+        for currentState in driver.exportFiles(parentFileId=homeFilePath): 
+            if currentState.get("isFinish"):
+                with open(filePath, "wb") as f:
+                    f.write(currentState.get("message"))
+                print("导出成功")
+            else:
+                print(currentState.get("message"))
     # 从分享链接导出
     elif mode == "link":
         for currentState in driver.exportShare(parentFileId=parentFileId,
                                                shareKey=shareKey,
-                                               sharePwd=sharePwd,
-                                               savePath=filePath):
-            print(currentState)
+                                               sharePwd=sharePwd):
+            if currentState.get("isFinish"):
+                with open(filePath, "wb") as f:
+                    f.write(currentState["message"])
+                print("导出成功")
+            else:
+                print(currentState["message"])
     # 导入
     elif mode == "import":
-        fin_text = ""
-        for currentState in driver.importFiles(filePath=filePath):
-            # fin_text += f"{currentState}\n"
-            fin_text = currentState
-        print(fin_text)
+        with open(filePath, "rb") as f:
+            base64Data = f.read()
+        rootFolderName = os.path.basename(filePath).strip(".123share")
+        clt = ""
+        for currentState in driver.importFiles(base64Data=base64Data,
+                                               rootFolderName=rootFolderName):
+            pass
+            clt += f"{currentState.get('message')}\n"
+            # print(currentState.get("message"))
+        print(clt)
     else:
         raise Exception("未知模式")
     # 退出登录

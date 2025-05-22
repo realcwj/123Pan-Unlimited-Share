@@ -135,7 +135,7 @@ class Pan123:
         if parentFileId in self.listFilesVisited:
             return None
         
-        yield f"获取文件列表中：parentFileId: {parentFileId}"
+        yield {"isFinish": None, "message": f"获取文件列表中：parentFileId: {parentFileId}"}
 
         page = 0
         body = {
@@ -186,8 +186,8 @@ class Pan123:
                             print(f"等待 self.sleepTime 秒后进入下一页")
                         time.sleep(self.sleepTime())
                 else:
-                    yield f"获取文件列表失败：响应中未找到令牌，尽管API调用可能已成功。响应: {response_data}"
-                    return None
+                    yield {"isFinish": False, "message": f"获取文件列表失败：响应中未找到令牌，尽管API调用可能已成功。响应: {response_data}"}
+                    return
 
             # 递归获取子文件夹下的文件
             for sub_file in ALL_ITEMS:
@@ -198,16 +198,16 @@ class Pan123:
             self.listFilesVisited[parentFileId] = ALL_ITEMS
 
         except Exception as e:
-            yield f"获取文件列表请求发生异常: {e}"
-            return None
+            yield {"isFinish": False, "message": f"获取文件列表请求发生异常: {e}"}
+            return
 
-    def exportFiles(self, parentFileId, savePath="./export.123"):
+    def exportFiles(self, parentFileId):
         # 读取文件夹
-        yield "读取文件夹..."
+        yield {"isFinish": None, "message": f"读取文件夹中..."}
         yield from self.listFiles(parentFileId=parentFileId)
-        yield "读取文件夹完成"
+        yield {"isFinish": None, "message": f"读取文件夹完成"}
         # 清洗数据
-        yield "数据清洗..."
+        yield {"isFinish": None, "message": f"数据清洗中..."}
         ALL_ITEMS = []
         for key, value in self.listFilesVisited.items():
             # 遍历所有文件夹和文件列表
@@ -222,21 +222,15 @@ class Pan123:
                     "parentFileId": item.get("ParentFileId"),
                     "AbsPath": item.get("AbsPath").split(f"{parentFileId}/")[-1], # 以输入的parentFileId作为根目录
                 })
-        yield "数据清洗完成"
-        # 匿名化
-        yield "匿名化..."
+        yield {"isFinish": None, "message": f"数据清洗完成"}
+        # 数据匿名化
+        yield {"isFinish": None, "message": f"数据匿名化中..."}
         ALL_ITEMS = anonymizeId(ALL_ITEMS)
-        yield "匿名化完成"
-        # 保存数据
-        # with open(savePath, "w", encoding="utf-8") as f:
-        #     json.dump(ALL_ITEMS, f, indent=4, ensure_ascii=False)
-        # 使用 base64 加密json数据防止被简单的内容审查程序读取内容
-        with open(savePath, "wb") as f:
-            f.write(base64.b64encode(json.dumps(ALL_ITEMS, ensure_ascii=False).encode("utf-8")))
-        yield f"导出完成, 保存到: {savePath}"
-        
-        return True
-    
+        yield {"isFinish": None, "message": f"数据匿名化完成"}
+        # 返回url_safe的base64数据(防止被简单的内容审查程序读取内容)
+        yield {"isFinish": True, "message": base64.urlsafe_b64encode(json.dumps(ALL_ITEMS, ensure_ascii=False).encode("utf-8"))}
+
+
     def createFolder(self, parentFileId, folderName):
         body = {
             "driveId":      0,
@@ -262,13 +256,11 @@ class Pan123:
                 if self.debug:
                     print(f"创建文件夹成功：{folderName}, fileId: {fileId}")
                 # 返回文件夹Id
-                return fileId
+                return {"isFinish": True, "message": fileId}
             else:
-                print(f"创建文件夹失败：响应中未找到令牌，尽管API调用可能已成功。响应: {response_data}")
-                return None
+                return {"isFinish": False, "message": f"创建文件夹失败：响应中未找到令牌，尽管API调用可能已成功。响应: {response_data}"}
         except Exception as e:
-            print(f"创建文件夹请求发生异常: {e}")
-            return None
+            return {"isFinish": False, "message": f"创建文件夹请求发生异常: {e}"}
     
     def uploadFile(self, etag, fileName, parentFileId, size):
         body = {
@@ -291,27 +283,26 @@ class Pan123:
                 fileId = response_data.get("data").get("Info").get("FileId")
                 if self.debug:
                     print(f"上传文件成功：{fileName}, fileId: {fileId}")
-                # 返回文件夹Id
-                return fileId
+                # 返回文件Id
+                return {"isFinish": True, "message": fileId}
             else:
-                print(f"上传文件失败：响应中未找到令牌，尽管API调用可能已成功。响应: {response_data}")
-                return None
+                return {"isFinish": False, "message": f"上传文件失败：响应中未找到令牌，尽管API调用可能已成功。响应: {response_data}"}
         except Exception as e:
-            print(f"上传文件请求发生异常: {e}")
-            return None
+            return {"isFinish": False, "message": f"上传文件请求发生异常: {e}"}
     
-    def importFiles(self, filePath="./export.123"):
+    def importFiles(self, base64Data, rootFolderName):
         # 读取数据
-        with open(filePath, "rb") as f:
-            files_list = json.loads(base64.b64decode(f.read()).decode("utf-8"))
-        
-        # 从filePath中获取文件名
-        saveFileName = os.path.basename(filePath).split(".123share")[0]
+        yield {"isFinish": None, "message": "正在读取数据..."}
+        try:
+            files_list = json.loads(base64.urlsafe_b64decode(base64Data))
+        except Exception as e:
+            yield {"isFinish": False, "message": f"读取数据失败, 报错：{e}"}
+            return
+        yield {"isFinish": None, "message": "数据读取完成"}
         
         ID_MAP = {} # {原文件夹ID: 新文件夹ID}
         
-        # 用 yield 实时返回当前状态
-        yield "数据预处理..."
+        yield {"isFinish": None, "message": "正在清洗数据..."}
         # 遍历数据，分类文件夹和文件
         ALL_FOLDERS = []
         ALL_FILES = []
@@ -330,16 +321,21 @@ class Pan123:
                 raise ValueError(f"未知类型：{item}")
 
         ALL_FOLDERS.sort(key=lambda x: x.get("folderDepth")) # 按照深度从0(根目录)开始排序
-        yield "数据预处理完成"
+        yield {"isFinish": None, "message": "数据清洗完成"}
 
-        yield "正在创建文件夹..."
+        yield {"isFinish": None, "message": "正在重建目录结构..."}
         # 先在根目录创建文件夹
         current_time = time.strftime("%Y%m%d%H%M%S", time.localtime())
-        rootFolderName = f"{saveFileName}_{current_time}_GitHub@realcwj" # 请尊重作者, 感谢配合!
+        rootFolderName = f"{rootFolderName}_{current_time}_GitHub@realcwj" # 请尊重作者, 感谢配合!
         rootFolderId = self.createFolder(
             parentFileId = 0,
             folderName = rootFolderName
         )
+        if rootFolderId.get("isFinish"): # 如果创建成功
+            rootFolderId = rootFolderId.get("message") # 获取文件夹ID
+        else:
+            yield rootFolderId # 返回错误信息
+            return
         # 如果分享的内容包含目录 (root目录放在目录的检测中记录)
         tqdm_bar = tqdm(total=len(ALL_FOLDERS))
         for folder in ALL_FOLDERS:
@@ -351,42 +347,59 @@ class Pan123:
                 parentFileId = ID_MAP.get(folder.get("parentFileId")), # 基于新的目录结构创建文件夹
                 folderName = folder.get("FileName") 
             )
+            if newFolderId.get("isFinish"): # 如果创建成功
+                newFolderId = newFolderId.get("message") # 获取文件夹ID
+            else:
+                yield newFolderId # 返回错误信息
+                return
+            
             # 映射原文件夹ID到新文件夹ID
             ID_MAP[folder.get("FileId")] = newFolderId
             
             tqdm_bar.update(1)
             tqdm_dict = tqdm_bar.format_dict
             
-            yield f"[{tqdm_dict['n']}/{tqdm_dict['total']}][速度: {tqdm_dict['rate']:.2f} 个/秒][预估剩余时间: {(tqdm_dict['total']-tqdm_dict['n'])/tqdm_dict['rate']:.2f} 秒] 正在创建文件夹: {folder.get('AbsPath')}"
+            yield {
+                "isFinish": None,
+                "message":f"[{tqdm_dict['n']}/{tqdm_dict['total']}][速度: {tqdm_dict['rate']:.2f} 个/秒][预估剩余时间: {(tqdm_dict['total']-tqdm_dict['n'])/tqdm_dict['rate']:.2f} 秒] 正在创建文件夹: {folder.get('FileName')}"
+            }
 
         tqdm_bar.close()
 
-        yield "创建文件夹完成"
-
-        yield "正在上传文件..."
+        yield {"isFinish": None, "message": "目录结构重建完成"}
 
         # 遍历数据, 上传文件
+        yield {"isFinish": None, "message": "正在上传文件..."}
         tqdm_bar = tqdm(total=len(ALL_FILES))
         for item in ALL_FILES:
             if item.get("fileDepth") == 0:
                 ID_MAP[item.get("parentFileId")] = rootFolderId
-            self.uploadFile(
+            newFileId = self.uploadFile(
                 etag = item.get("Etag"),
                 fileName = item.get("FileName"),
                 parentFileId = ID_MAP.get(item.get("parentFileId")), # 基于新的目录结构上传文件
                 size = item.get("Size")
             )
 
+            if newFileId.get("isFinish"): # 如果上传成功
+                newFileId = newFileId.get("message") # 获取文件ID (目前没用到)
+            else:
+                yield newFileId # 返回错误信息
+                return
+            
             tqdm_bar.update(1)
             tqdm_dict = tqdm_bar.format_dict
 
-            yield f"[{tqdm_dict['n']}/{tqdm_dict['total']}][速度: {tqdm_dict['rate']:.2f} 个/秒][预估剩余时间: {(tqdm_dict['total']-tqdm_dict['n'])/tqdm_dict['rate']:.2f} 秒] 正在上传文件: {item.get('FileName')}"
+            yield {
+                "isFinish": None,
+                "message": f"[{tqdm_dict['n']}/{tqdm_dict['total']}][速度: {tqdm_dict['rate']:.2f} 个/秒][预估剩余时间: {(tqdm_dict['total']-tqdm_dict['n'])/tqdm_dict['rate']:.2f} 秒] 正在上传文件: {item.get('FileName')}"
+            }
 
         tqdm_bar.close()
         
-        yield "上传文件完成"
+        yield {"isFinish": None, "message": "文件上传完成"}
 
-        yield f"导入完成, 保存到123网盘根目录中的: >>> {rootFolderName} <<< 文件夹"
+        yield {"isFinish": True, "message": f"导入完成, 保存到123网盘根目录中的: >>> {rootFolderName} <<< 文件夹"}
     
     def listShare(self, parentFileId, shareKey, sharePwd):
         
@@ -394,7 +407,7 @@ class Pan123:
         if parentFileId in self.listShareVisited:
             return None
         
-        yield f"获取文件列表中：parentFileId: {parentFileId}"
+        yield {"isFinish": None, "message": f"获取文件列表中：parentFileId: {parentFileId}"}
 
         page = 0
         body = {
@@ -440,8 +453,8 @@ class Pan123:
                             print(f"等待 self.sleepTime 秒后进入下一页")
                         time.sleep(self.sleepTime())
                 else:
-                    yield f"获取文件列表失败：响应中未找到令牌，尽管API调用可能已成功。响应: {response_data}"
-                    return None
+                    yield {"isFinish": False, "message": f"获取文件列表失败：响应中未找到令牌，尽管API调用可能已成功。响应: {response_data}"}
+                    return
 
             # 递归获取子文件夹下的文件
             for sub_file in ALL_ITEMS:
@@ -456,30 +469,30 @@ class Pan123:
             self.listShareVisited[parentFileId] = ALL_ITEMS
 
         except Exception as e:
-            yield f"获取文件列表请求发生异常: {e}"
-            return None
+            yield {"isFinish": False, "message": f"获取文件列表请求发生异常: {e}"}
+            return
 
-    def exportShare(self, shareKey, sharePwd, parentFileId=0, savePath="./export.123"):
+    def exportShare(self, shareKey, sharePwd, parentFileId=0):
         
         # 读取文件夹
-        yield "正在获取文件列表..."
+        yield {"isFinish": None, "message": f"获取文件列表中..."}
         yield from self.listShare(
             parentFileId=parentFileId,
             shareKey=shareKey,
             sharePwd=sharePwd
             )
-        yield "获取文件列表完成"
+        yield {"isFinish": None, "message": f"获取文件列表完成"}
         # 生成路径
-        yield "重建文件路径结构..."
+        yield {"isFinish": None, "message": f"重建文件路径结构中..."}
         self.listShareVisited = makeAbsPath(
             fullDict=self.listShareVisited,
             parentFileId=parentFileId,
             debug=self.debug
         )
-        yield "重建文件路径结构完成"
+        yield {"isFinish": None, "message": f"重建文件路径结构完成"}
         
         # 清洗数据
-        yield "清洗数据..."
+        yield {"isFinish": None, "message": f"清洗数据中..."}
         ALL_ITEMS = []
         for key, value in self.listShareVisited.items():
             # 遍历所有文件夹和文件列表
@@ -494,17 +507,10 @@ class Pan123:
                     "parentFileId": item.get("ParentFileId"),
                     "AbsPath": item.get("AbsPath").split(f"{parentFileId}/")[-1], # 以输入的parentFileId作为根目录
                 })
-        yield "清洗数据完成"
-        # 匿名化
-        yield "匿名化数据..."
+        yield {"isFinish": None, "message": f"清洗数据完成"}
+        # 数据匿名化
+        yield {"isFinish": None, "message": f"数据匿名化中..."}
         ALL_ITEMS = anonymizeId(ALL_ITEMS)
-        yield "匿名化数据完成"
-        # 保存数据
-        with open(savePath, "w", encoding="utf-8") as f:
-            json.dump(ALL_ITEMS, f, indent=4, ensure_ascii=False)
-        # 使用 base64 加密json数据防止被简单的内容审查程序读取内容
-        # with open(savePath, "wb") as f:
-        #     f.write(base64.b64encode(json.dumps(ALL_ITEMS, ensure_ascii=False).encode("utf-8")))
-        yield f"导出完成, 保存到: {savePath}"
-        
-        return True
+        yield {"isFinish": None, "message": f"数据匿名化完成"}
+        # 返回url_safe的base64数据(防止被简单的内容审查程序读取内容)
+        yield {"isFinish": True, "message": base64.urlsafe_b64encode(json.dumps(ALL_ITEMS, ensure_ascii=False).encode("utf-8"))}
