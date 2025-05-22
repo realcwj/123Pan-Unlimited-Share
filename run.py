@@ -78,13 +78,9 @@ if __name__ == "__main__":
         with open(filePath, "rb") as f:
             base64Data = f.read()
         rootFolderName = os.path.basename(filePath).strip(".123share")
-        clt = ""
         for currentState in driver.importFiles(base64Data=base64Data,
                                                rootFolderName=rootFolderName):
             pass
-            clt += f"{currentState.get('message')}\n"
-            # print(currentState.get("message"))
-        print(clt)
     else:
         raise Exception("未知模式")
     # 退出登录
