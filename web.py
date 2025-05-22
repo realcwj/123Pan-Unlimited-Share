@@ -1,15 +1,14 @@
 import os
-import sys
-import io
 import time
 import json
 import base64
-from flask import Flask, render_template, request, redirect, url_for, flash, Response, stream_with_context, jsonify, make_response
-from werkzeug.utils import secure_filename # 仅用于资源共享计划的文件名安全处理
+from flask import Flask, render_template, request, Response, stream_with_context, jsonify, make_response
+import re
+import unicodedata
+
 from Pan123 import Pan123
 
-# DEBUG = True # 开发时可以设为 True
-DEBUG = True
+DEBUG = False
 
 app = Flask(__name__)
 app.secret_key = '114514_new_secret_key_for_updates' # 建议更新密钥
@@ -23,6 +22,40 @@ if not os.path.exists(PUBLIC_SHARE_CHECK_FOLDER):
     os.makedirs(PUBLIC_SHARE_CHECK_FOLDER)
 if not os.path.exists(PUBLIC_SHARE_OK_FOLDER):
     os.makedirs(PUBLIC_SHARE_OK_FOLDER)
+
+def custom_secure_filename_part(name_str):
+    """
+    清理用户输入的文件名部分，移除路径相关和常见非法字符，但保留中文、字母、数字等。
+    """
+    if not name_str:
+        return ""
+    
+    # 1. 标准化Unicode字符串，例如NFC形式，避免因不同表示形式导致的问题 (可选，但推荐)
+    name_str = unicodedata.normalize('NFC', name_str)
+
+    # 2. 移除或替换控制字符 (Cc, Cf, Cs, Co, Cn)
+    name_str = "".join(c for c in name_str if unicodedata.category(c)[0] != "C")
+
+    # 3. 替换明确的路径分隔符和Windows/Linux文件名中的非法字符
+    #    非法字符集: \ / : * ? " < > |
+    name_str = re.sub(r'[\\/:*?"<>|]', '_', name_str)
+    
+    # 4. 防止文件名以点或空格开头/结尾，或完全由点组成 (如 '.', '..')
+    name_str = name_str.strip(' .')
+    if re.fullmatch(r'\.+', name_str): # 如果整个名字是 "." or ".." or "..." etc.
+        return "_" # 或者特定的替换，如 "invalid_dots_name"
+        
+    # 5. 确保文件名不为空，如果清理后为空，返回一个替代
+    if not name_str:
+        return "untitled" # 或者其他你希望的默认名
+
+    # 6. 限制文件名长度 (可选)
+    # MAX_FILENAME_PART_LENGTH = 100 # 示例长度
+    # if len(name_str) > MAX_FILENAME_PART_LENGTH:
+    #     name_str = name_str[:MAX_FILENAME_PART_LENGTH]
+    #     name_str = name_str.strip(' ._') # 可能因为截断产生结尾的点/空格
+
+    return name_str
 
 @app.route('/')
 def index():
@@ -39,7 +72,7 @@ def api_export():
     username = data.get('username')
     password = data.get('password')
     home_file_path_str = data.get('homeFilePath', '0')
-    user_specified_base_name = data.get('userSpecifiedBaseName', '').strip()
+    user_specified_base_name_raw = data.get('userSpecifiedBaseName', '').strip()
     share_project = data.get('shareProject', False)
 
     if not username or not password:
@@ -50,19 +83,23 @@ def api_export():
     try:
         parent_file_id_internal = int(home_file_path_str)
     except ValueError:
-        parent_file_id_internal = home_file_path_str # 允许字符串形式的ID
+        parent_file_id_internal = home_file_path_str 
 
     timestamp = str(int(time.time()))
-    if user_specified_base_name:
-        filename_base = f"{timestamp}_{user_specified_base_name}"
+    
+    # 清理用户指定的根目录名，使其对文件名安全，但保留中文
+    cleaned_user_name_part = custom_secure_filename_part(user_specified_base_name_raw)
+
+    if cleaned_user_name_part:
+        filename_base = f"{timestamp}_{cleaned_user_name_part}"
     else:
         filename_base = timestamp
     
-    # 确保文件名后缀正确
-    if not filename_base.endswith(".123share"):
-        filename_for_sharing = f"{filename_base}.123share"
-    else:
-        filename_for_sharing = filename_base
+    # 服务器上保存的文件名（如果加入共享计划）
+    server_filename_for_sharing = f"{filename_base}.123share"
+    # 如果清理后或组合后文件名变空或无效，提供一个fallback
+    if not server_filename_for_sharing.strip(' ._') or len(server_filename_for_sharing) <= len(".123share"):
+        server_filename_for_sharing = f"{timestamp}_export_fallback.123share"
 
     def generate_export():
         driver = Pan123(debug=DEBUG)
@@ -79,7 +116,6 @@ def api_export():
             for state in driver.exportFiles(parentFileId=parent_file_id_internal):
                 if state.get("isFinish") is True:
                     final_b64_data = state["message"] # 这是 bytes 类型
-                    # 将 bytes 转换为 base64 字符串发送给前端
                     yield f"{json.dumps({'isFinish': True, 'message': final_b64_data.decode('utf-8')})}\n"
                 elif state.get("isFinish") is False:
                     yield f"{json.dumps(state)}\n"
@@ -88,23 +124,20 @@ def api_export():
             
             if final_b64_data and share_project:
                 try:
-                    # 安全处理一下文件名，尽管它主要基于时间戳和用户输入（已处理strip）
-                    safe_share_filename = secure_filename(filename_for_sharing)
-                    if not safe_share_filename: # 如果 secure_filename 返回空
-                        safe_share_filename = f"{timestamp}_unsafe_fallback.123share"
-
-                    share_file_path = os.path.join(PUBLIC_SHARE_CHECK_FOLDER, safe_share_filename)
+                    # 使用已经清理过的、可能包含中文的 server_filename_for_sharing
+                    share_file_path = os.path.join(PUBLIC_SHARE_CHECK_FOLDER, server_filename_for_sharing)
                     with open(share_file_path, "wb") as f:
                         f.write(final_b64_data)
-                    yield f"{json.dumps({'isFinish': None, 'message': f'文件已提交至资源共享计划审核队列: {safe_share_filename}'})}\n"
+                    yield f"{json.dumps({'isFinish': None, 'message': f'文件已提交至资源共享计划审核队列: {server_filename_for_sharing}'})}\n"
                 except Exception as e_share:
+                    app.logger.error(f"Error saving to public share (export): {e_share}", exc_info=True)
                     yield f"{json.dumps({'isFinish': None, 'message': f'加入资源共享计划失败: {str(e_share)}'})}\n"
 
         except Exception as e:
             yield f"{json.dumps({'isFinish': False, 'message': f'导出过程中发生错误: {str(e)}'})}\n"
             app.logger.error(f"Export API error: {e}", exc_info=True)
         finally:
-            if login_success: # 只有登录成功了才尝试注销
+            if login_success: 
                 driver.doLogout()
                 yield f"{json.dumps({'isFinish': None, 'message': '已注销账号。'})}\n"
 
@@ -118,7 +151,7 @@ def api_import():
 
     username = data.get('username')
     password = data.get('password')
-    base64_data_str = data.get('base64Data') # 前端传来的应是base64字符串
+    base64_data_str = data.get('base64Data') 
     root_folder_name = data.get('rootFolderName')
 
     if not username or not password:
@@ -129,7 +162,6 @@ def api_import():
         return jsonify({"isFinish": False, "message": "根目录名不能为空。"}), 400
 
     try:
-        # Pan123.py的importFiles期望base64Data是bytes
         base64_data_bytes = base64.urlsafe_b64decode(base64_data_str.encode('utf-8'))
     except Exception as e:
         return jsonify({"isFinish": False, "message": f"分享码格式错误: {str(e)}"}), 400
@@ -145,8 +177,10 @@ def api_import():
         yield f"{json.dumps({'isFinish': None, 'message': '登录成功，开始导入文件...'})}\n"
         
         try:
+            # Pan123.py 的 importFiles 中的 rootFolderName 也会加上时间戳和作者信息，所以这里的 root_folder_name 可以直接传递
+            # 如果希望 root_folder_name 本身也支持中文，并作为最终目录名的一部分，确保 Pan123.py 也能正确处理
             for state in driver.importFiles(base64Data=base64_data_bytes, rootFolderName=root_folder_name):
-                yield f"{json.dumps(state)}\n" # state 已经是 {"isFinish": ..., "message": ...} 格式
+                yield f"{json.dumps(state)}\n" 
         except Exception as e:
             yield f"{json.dumps({'isFinish': False, 'message': f'导入过程中发生错误: {str(e)}'})}\n"
             app.logger.error(f"Import API error: {e}", exc_info=True)
@@ -165,13 +199,13 @@ def api_link():
 
     parent_file_id_str = data.get('parentFileId', '0')
     share_key = data.get('shareKey')
-    share_pwd = data.get('sharePwd', '') # 密码可以为空
-    user_specified_base_name = data.get('userSpecifiedBaseName', '').strip()
+    share_pwd = data.get('sharePwd', '') 
+    user_specified_base_name_raw = data.get('userSpecifiedBaseName', '').strip()
     share_project = data.get('shareProject', False)
 
     if not share_key:
         return jsonify({"isFinish": False, "message": "分享链接 Key 不能为空。"}), 400
-    if not parent_file_id_str: # parentFileId 允许为 0
+    if not parent_file_id_str: 
         return jsonify({"isFinish": False, "message": "文件夹ID不能为空。"}), 400
         
     try:
@@ -180,26 +214,32 @@ def api_link():
         parent_file_id_internal = parent_file_id_str
 
     timestamp = str(int(time.time()))
-    # 构建基础文件名
-    if user_specified_base_name:
-        filename_base_parts = [timestamp, user_specified_base_name]
-    else:
-        filename_base_parts = [timestamp]
     
-    # 为资源共享计划的文件名添加key和pwd信息 (如果存在)
-    share_info_parts = [share_key]
+    # 清理用户指定的根目录名
+    cleaned_user_name_part = custom_secure_filename_part(user_specified_base_name_raw)
+    
+    # 构建基础文件名部分
+    filename_parts = [timestamp]
+    if cleaned_user_name_part:
+        filename_parts.append(cleaned_user_name_part)
+    
+    # shareKey 和 sharePwd 通常是URL安全的，但为了以防万一也简单清理一下
+    # 这里假设 share_key 和 share_pwd 不包含需要复杂处理的字符，主要是为了拼接
+    safe_share_key = re.sub(r'[\\/:*?"<>|]', '_', share_key) # 基本清理
+    filename_parts.append(safe_share_key)
     if share_pwd:
-        share_info_parts.append(share_pwd)
+        safe_share_pwd = re.sub(r'[\\/:*?"<>|]', '_', share_pwd) # 基本清理
+        filename_parts.append(safe_share_pwd)
     
-    filename_base_for_sharing = "_".join(filename_base_parts + share_info_parts)
-
-    if not filename_base_for_sharing.endswith(".123share"):
-        filename_for_sharing = f"{filename_base_for_sharing}.123share"
-    else:
-        filename_for_sharing = filename_base_for_sharing
+    filename_base_for_sharing = "_".join(filename_parts)
+    
+    server_filename_for_sharing = f"{filename_base_for_sharing}.123share"
+    # Fallback
+    if not server_filename_for_sharing.strip(' ._') or len(server_filename_for_sharing) <= len(".123share"):
+        server_filename_for_sharing = f"{timestamp}_{safe_share_key}_link_fallback.123share"
 
     def generate_link_export():
-        driver = Pan123(debug=DEBUG) # Link export不需要登录
+        driver = Pan123(debug=DEBUG) 
         yield f"{json.dumps({'isFinish': None, 'message': '开始从分享链接导出文件列表...'})}\n"
         
         final_b64_data = None
@@ -219,15 +259,13 @@ def api_link():
 
             if final_b64_data and share_project:
                 try:
-                    safe_share_filename = secure_filename(filename_for_sharing)
-                    if not safe_share_filename:
-                        safe_share_filename = f"{timestamp}_{share_key}_unsafe_fallback.123share"
-                    
-                    share_file_path = os.path.join(PUBLIC_SHARE_CHECK_FOLDER, safe_share_filename)
+                    # 使用已经清理过的、可能包含中文的 server_filename_for_sharing
+                    share_file_path = os.path.join(PUBLIC_SHARE_CHECK_FOLDER, server_filename_for_sharing)
                     with open(share_file_path, "wb") as f:
                         f.write(final_b64_data)
-                    yield f"{json.dumps({'isFinish': None, 'message': f'文件已提交至资源共享计划审核队列: {safe_share_filename}'})}\n"
+                    yield f"{json.dumps({'isFinish': None, 'message': f'文件已提交至资源共享计划审核队列: {server_filename_for_sharing}'})}\n"
                 except Exception as e_share:
+                    app.logger.error(f"Error saving to public share (link): {e_share}", exc_info=True)
                     yield f"{json.dumps({'isFinish': None, 'message': f'加入资源共享计划失败: {str(e_share)}'})}\n"
 
         except Exception as e:
@@ -241,9 +279,9 @@ def list_public_shares():
     try:
         share_files = []
         if os.path.exists(PUBLIC_SHARE_OK_FOLDER):
+            # os.listdir 返回的是解码后的文件名 (通常是UTF-8)
             for f_name in os.listdir(PUBLIC_SHARE_OK_FOLDER):
                 if f_name.endswith(".123share"):
-                    # 提取不带后缀的文件名作为 "name"，完整文件名作为 "value"
                     base_name = os.path.splitext(f_name)[0]
                     share_files.append({"name": base_name, "filename": f_name})
         return jsonify({"success": True, "files": sorted(share_files, key=lambda x: x['name'])}), 200
@@ -253,29 +291,48 @@ def list_public_shares():
 
 @app.route('/api/get_public_share_content', methods=['GET'])
 def get_public_share_content():
-    filename = request.args.get('filename')
+    # Flask 会自动 URL 解码查询参数
+    filename = request.args.get('filename') 
     if not filename:
         return jsonify({"success": False, "message": "缺少文件名参数。"}), 400
 
-    # 安全性：确保文件名不包含路径遍历字符
-    safe_filename = secure_filename(filename)
-    if safe_filename != filename or not filename.endswith(".123share"):
-        return jsonify({"success": False, "message": "无效的文件名。"}), 400
+    # 安全性：防止路径遍历。文件名来自服务器 os.listdir，理论上安全，
+    # 但客户端可能篡改。这里进行基本检查。
+    # 不再使用 werkzeug.secure_filename 因为它会移除中文。
+    if ".." in filename or os.path.isabs(filename) or \
+       "/" in filename or "\\" in filename: # 检查相对路径、绝对路径和目录分隔符
+        app.logger.warning(f"Potentially unsafe filename detected in get_public_share_content: {filename}")
+        return jsonify({"success": False, "message": "文件名包含非法字符或路径。"}), 400
 
-    file_path = os.path.join(PUBLIC_SHARE_OK_FOLDER, safe_filename)
+    if not filename.endswith(".123share"):
+        return jsonify({"success": False, "message": "无效的文件扩展名。"}), 400
+    
+    # filename 现在是原始的、可能包含中文的文件名
+    file_path = os.path.join(PUBLIC_SHARE_OK_FOLDER, filename)
+    
+    # 规范化路径，主要用于正确性检查和日志记录，os.path.exists 会处理非规范路径
+    file_path = os.path.normpath(file_path)
 
-    if not os.path.exists(file_path):
+    # 确保构造的路径仍然在 PUBLIC_SHARE_OK_FOLDER 之下，防止精心构造的 ".." 绕过上面的检查
+    # (os.path.commonprefix 在 Python 3.10+ 中可以用 os.path.commonpath)
+    # 更简单的检查是确保它没有跳出预期的父目录
+    if not file_path.startswith(os.path.normpath(PUBLIC_SHARE_OK_FOLDER) + os.sep):
+        app.logger.warning(f"Path traversal attempt detected or invalid path structure: {file_path}")
+        return jsonify({"success": False, "message": "文件路径无效。"}), 400
+
+    if not os.path.exists(file_path) or not os.path.isfile(file_path): # 确保是文件
+        app.logger.warning(f"Public share file not found or is not a file. Requested filename: '{request.args.get('filename')}', Looked for: '{file_path}'")
         return jsonify({"success": False, "message": "文件未找到。"}), 404
 
     try:
         with open(file_path, "rb") as f:
             content_bytes = f.read()
-        # 将字节串转换为 base64 字符串返回
         content_b64_str = base64.urlsafe_b64encode(content_bytes).decode('utf-8')
-        root_folder_name = os.path.splitext(safe_filename)[0] # 使用不带后缀的文件名作为根目录名建议
+        # 使用不带 .123share 后缀的文件名作为建议的根目录名
+        root_folder_name = os.path.splitext(filename)[0] 
         return jsonify({"success": True, "base64Data": content_b64_str, "rootFolderName": root_folder_name}), 200
     except Exception as e:
-        app.logger.error(f"Error reading public share {safe_filename}: {e}", exc_info=True)
+        app.logger.error(f"Error reading public share '{filename}': {e}", exc_info=True)
         return jsonify({"success": False, "message": f"读取分享文件内容失败: {str(e)}"}), 500
 
 # --- HTML Routes ---
@@ -295,7 +352,4 @@ def link_page():
     return resp
 
 if __name__ == '__main__':
-    # 确保在生产环境中 DEBUG 为 False
-    # app.run(debug=DEBUG, host='0.0.0.0', port=33333)
-    # 根据用户原始的 web.py，debug 是全局变量
-    app.run(debug=DEBUG, host='0.0.0.0', port=33333, threaded=True) # threaded=True有助处理并发请求
+    app.run(debug=DEBUG, host='0.0.0.0', port=33333, threaded=True)
