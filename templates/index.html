@@ -49,19 +49,15 @@
                 {% endif %}
             {% endwith %}
 
-            <form action="{{ url_for('select_mode') }}" method="POST">
-                <div class="d-grid gap-3 index-buttons">
-                    <button type="submit" name="mode" value="export" class="btn btn-primary custom-btn">
-                        <i class="bi bi-box-arrow-up-right me-2"></i> 从私人网盘导出
-                    </button>
-                    <button type="submit" name="mode" value="import" class="btn btn-primary custom-btn">
-                        <i class="bi bi-box-arrow-in-down me-2"></i> 导入到私人网盘
-                    </button>
-                    <button type="submit" name="mode" value="link" class="btn btn-primary custom-btn">
-                        <i class="bi bi-link-45deg me-2"></i> 从分享链接导出
-                    </button>
-                </div>
-            </form>
+            <div class="d-grid gap-3 index-buttons">
+                <a href="{{ url_for('export_page') }}" class="btn btn-primary custom-btn">
+                    <i class="bi bi-box-arrow-up-right me-2"></i> 从私人网盘导出
+                </a>
+                <a href="{{ url_for('import_page') }}" class="btn btn-success custom-btn"> <i class="bi bi-box-arrow-in-down me-2"></i> 导入到私人网盘
+                </a>
+                <a href="{{ url_for('link_page') }}" class="btn btn-info custom-btn"> <i class="bi bi-link-45deg me-2"></i> 从分享链接导出
+                </a>
+            </div>
         </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>

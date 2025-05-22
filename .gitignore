@@ -6,3 +6,5 @@ __pycache__
 /*.json
 /uploads/*
 *test*
+/public/check/*
+/public/ok/*

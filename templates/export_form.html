@@ -16,40 +16,252 @@
                 <a href="{{ url_for('index') }}" class="btn btn-sm btn-outline-secondary">返回首页</a>
             </div>
 
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                            {{ message }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                        </div>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
-
-            <form action="{{ url_for('export_form') }}" method="POST">
+            <form id="exportForm">
                 <div class="mb-3">
-                    <label for="username" class="form-label">手机号/邮箱</label>
+                    <label for="username" class="form-label">账号</label>
                     <input type="text" class="form-control" id="username" name="username" required>
+                    <div class="form-text">123云盘绑定的手机号/邮箱</div>
                 </div>
                 <div class="mb-3">
                     <label for="password" class="form-label">密码</label>
                     <input type="password" class="form-control" id="password" name="password" required>
+                    <div class="form-text">123云盘的登录密码, 担心隐私风险? 推荐 <a href="https://github.com/realcwj/123Pan-Unlimited-Share?tab=readme-ov-file#%E6%8E%A8%E8%8D%90%E6%9C%AC%E5%9C%B0%E9%83%A8%E7%BD%B2%E5%8F%AF%E8%A7%86%E5%8C%96%E7%95%8C%E9%9D%A2%E7%BD%91%E9%A1%B5" target="_blank">本地部署</a></div>
                 </div>
                 <div class="mb-3">
-                    <label for="homeFilePath" class="form-label">要分享的文件夹ID</label>
-                    <input type="text" class="form-control" id="homeFilePath" name="homeFilePath" value="0" placeholder="整个网盘填 0">
-                    <div class="form-text">如果要分享整个网盘，填 0 (速度可能较慢)。</div>
+                    <label for="userSpecifiedBaseName" class="form-label">根目录名 (分享名)</label>
+                    <input type="text" class="form-control" id="userSpecifiedBaseName" name="userSpecifiedBaseName" placeholder="例如: 我的备份 (可选)">
+                    <div class="form-text">即分享名（其他用户导入时显示的文件夹名）。如果留空，将使用时间戳作为文件名。</div>
                 </div>
-                 <div class="mb-3">
-                    <label for="saveFilename" class="form-label">导出文件名</label>
-                    <input type="text" class="form-control" id="saveFilename" name="saveFilename" value="exported_data.123share" placeholder="例如: my_backup.123share">
-                    <div class="form-text">导出的文件将以此名称提供下载。请使用 `.123share` 后缀。</div>
+                <div class="mb-3">
+                    <label for="homeFilePath" class="form-label">文件夹ID</label>
+                    <input type="text" class="form-control" id="homeFilePath" name="homeFilePath" value="0" required>
+                    <div class="form-text">要分享的文件夹ID，获取方式见 <a href="https://github.com/realcwj/123Pan-Unlimited-Share?tab=readme-ov-file#%E5%A6%82%E4%BD%95%E8%8E%B7%E5%8F%96-homefilepath-" target="_blank">FAQ</a>。分享整个网盘填 0。</div>
+                </div>
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" id="shareProject" name="shareProject">
+                    <label class="form-check-label" for="shareProject">加入资源共享计划</label>
+                    <div class="form-text">如果加入资源共享计划，您本次分享的资源将审核后公开可见(仅审核文件名有无敏感内容)。</div>
                 </div>
                 <button type="submit" class="btn btn-primary custom-btn w-100">开始导出</button>
             </form>
+
+            <div id="resultArea" class="mt-4" style="display: none;">
+                <h5>操作结果:</h5>
+                <div id="statusMessage" class="alert"></div>
+                <pre id="logOutput" class="console-output p-3 rounded" style="max-height: 300px; overflow-y: auto;"></pre>
+                <div id="shareCodeArea" style="display: none;">
+                    <p><strong>您的分享码是：</strong></p>
+                    <textarea id="shareCodeOutput" class="form-control" rows="3" readonly></textarea>
+                    <button id="downloadShareCodeBtn" class="btn btn-success mt-2 custom-btn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-download me-2" viewBox="0 0 16 16">
+                          <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5"/>
+                          <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708z"/>
+                        </svg>
+                        下载分享文件 (.123share)
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Cookie functions
+        function setCookie(name, value, days) {
+            let expires = "";
+            if (days) {
+                let date = new Date();
+                date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+                expires = "; expires=" + date.toUTCString();
+            }
+            document.cookie = name + "=" + (value || "") + expires + "; path=/; SameSite=Lax";
+        }
+
+        function getCookie(name) {
+            let nameEQ = name + "=";
+            let ca = document.cookie.split(';');
+            for (let i = 0; i < ca.length; i++) {
+                let c = ca[i];
+                while (c.charAt(0) == ' ') c = c.substring(1, c.length);
+                if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length, c.length);
+            }
+            return null;
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const exportForm = document.getElementById('exportForm');
+            const resultArea = document.getElementById('resultArea');
+            const statusMessage = document.getElementById('statusMessage');
+            const logOutput = document.getElementById('logOutput');
+            const shareCodeArea = document.getElementById('shareCodeArea');
+            const shareCodeOutput = document.getElementById('shareCodeOutput');
+            const downloadShareCodeBtn = document.getElementById('downloadShareCodeBtn');
+
+            // Load credentials from cookies
+            const savedUsername = getCookie('username');
+            const savedPassword = getCookie('password');
+            if (savedUsername) {
+                document.getElementById('username').value = savedUsername;
+            }
+            if (savedPassword) {
+                document.getElementById('password').value = savedPassword;
+            }
+            
+            let finalShareData = null;
+            let finalFilename = "exported_data.123share";
+
+            exportForm.addEventListener('submit', async function (event) {
+                event.preventDefault();
+                resultArea.style.display = 'block';
+                logOutput.textContent = '';
+                shareCodeArea.style.display = 'none';
+                statusMessage.textContent = '';
+                statusMessage.className = 'alert'; // Reset class
+                finalShareData = null;
+
+                const username = document.getElementById('username').value;
+                const password = document.getElementById('password').value;
+                const userSpecifiedBaseName = document.getElementById('userSpecifiedBaseName').value.trim();
+                const homeFilePath = document.getElementById('homeFilePath').value;
+                const shareProject = document.getElementById('shareProject').checked;
+
+                // Save credentials to cookies
+                setCookie('username', username, 30); // Save for 30 days
+                setCookie('password', password, 30); // Save for 30 days
+
+                const payload = {
+                    username: username,
+                    password: password,
+                    userSpecifiedBaseName: userSpecifiedBaseName,
+                    homeFilePath: homeFilePath,
+                    shareProject: shareProject
+                };
+                
+                const timestamp = Math.floor(Date.now() / 1000);
+                if (userSpecifiedBaseName) {
+                    finalFilename = `${timestamp}_${userSpecifiedBaseName}.123share`;
+                } else {
+                    finalFilename = `${timestamp}.123share`;
+                }
+
+                try {
+                    const response = await fetch("{{ url_for('api_export') }}", {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(payload),
+                    });
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        statusMessage.textContent = `错误: ${errorData.message || response.statusText}`;
+                        statusMessage.classList.add('alert-danger');
+                        logOutput.textContent += `请求失败: ${errorData.message || response.statusText}\n`;
+                        return;
+                    }
+                    
+                    statusMessage.textContent = "处理中...";
+                    statusMessage.classList.add('alert-info');
+
+                    const reader = response.body.getReader();
+                    const decoder = new TextDecoder('utf-8');
+                    let buffer = '';
+
+                    while (true) {
+                        const { value, done } = await reader.read();
+                        if (done) break;
+                        
+                        buffer += decoder.decode(value, { stream: true });
+                        const lines = buffer.split('\n');
+                        buffer = lines.pop(); // Keep the last partial line
+
+                        for (const line of lines) {
+                            if (line.trim() === '') continue;
+                            try {
+                                const jsonData = JSON.parse(line);
+                                logOutput.textContent += `${jsonData.message}\n`;
+                                logOutput.scrollTop = logOutput.scrollHeight; // Auto-scroll
+
+                                if (jsonData.isFinish === true) {
+                                    statusMessage.textContent = '导出成功完成！';
+                                    statusMessage.classList.remove('alert-info', 'alert-danger');
+                                    statusMessage.classList.add('alert-success');
+                                    finalShareData = jsonData.message; // This is b64 string
+                                    shareCodeOutput.value = finalShareData;
+                                    shareCodeArea.style.display = 'block';
+                                } else if (jsonData.isFinish === false) {
+                                    statusMessage.textContent = `操作失败: ${jsonData.message}`;
+                                    statusMessage.classList.remove('alert-info', 'alert-success');
+                                    statusMessage.classList.add('alert-danger');
+                                }
+                            } catch (e) {
+                                console.error('Error parsing JSON line:', line, e);
+                                logOutput.textContent += `错误: 无法解析流数据: ${line}\n`;
+                            }
+                        }
+                    }
+                     // Process any remaining data in buffer
+                    if (buffer.trim() !== '') {
+                        try {
+                            const jsonData = JSON.parse(buffer);
+                            logOutput.textContent += `${jsonData.message}\n`;
+                            logOutput.scrollTop = logOutput.scrollHeight;
+                            if (jsonData.isFinish === true) {
+                                statusMessage.textContent = '导出成功完成！';
+                                statusMessage.classList.remove('alert-info', 'alert-danger');
+                                statusMessage.classList.add('alert-success');
+                                finalShareData = jsonData.message;
+                                shareCodeOutput.value = finalShareData;
+                                shareCodeArea.style.display = 'block';
+                            } else if (jsonData.isFinish === false) {
+                                statusMessage.textContent = `操作失败: ${jsonData.message}`;
+                                statusMessage.classList.remove('alert-info', 'alert-success');
+                                statusMessage.classList.add('alert-danger');
+                            }
+                        } catch (e) {
+                            console.error('Error parsing final JSON buffer:', buffer, e);
+                             logOutput.textContent += `错误: 无法解析末尾流数据: ${buffer}\n`;
+                        }
+                    }
+
+                } catch (error) {
+                    console.error('Fetch error:', error);
+                    statusMessage.textContent = `请求发送失败: ${error.message}`;
+                    statusMessage.classList.remove('alert-info', 'alert-success');
+                    statusMessage.classList.add('alert-danger');
+                    logOutput.textContent += `请求发送失败: ${error.message}\n`;
+                }
+            });
+
+            downloadShareCodeBtn.addEventListener('click', function() {
+                if (finalShareData) {
+                    try {
+                        // finalShareData 是后端返回的 base64 编码的字符串
+                        // 需要将其解码为 Uint8Array 以创建 Blob
+                        const byteCharacters = atob(finalShareData);
+                        const byteNumbers = new Array(byteCharacters.length);
+                        for (let i = 0; i < byteCharacters.length; i++) {
+                            byteNumbers[i] = byteCharacters.charCodeAt(i);
+                        }
+                        const byteArray = new Uint8Array(byteNumbers);
+                        const blob = new Blob([byteArray], { type: 'application/octet-stream' });
+                        
+                        const link = document.createElement('a');
+                        link.href = URL.createObjectURL(blob);
+                        link.download = finalFilename;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        URL.revokeObjectURL(link.href);
+                    } catch (e) {
+                        console.error("Error creating download:", e);
+                        alert("创建下载文件失败: " + e.message);
+                    }
+                } else {
+                    alert('没有可下载的分享码数据。');
+                }
+            });
+        });
+    </script>
 </body>
 </html>
