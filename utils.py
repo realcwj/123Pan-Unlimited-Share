@@ -1,16 +1,16 @@
-from tqdm import tqdm
+
 
 # 构建AbsPath
 def makeAbsPath(fullDict, parentFileId=0, debug=False):
     _parentMapping = {} # {子文件ID: 父文件夹ID}
     # 遍历所有文件夹和文件列表，记录每个文件的父文件夹ID
-    for key, value in tqdm(fullDict.items()):
+    for key, value in fullDict.items():
         for item in value:
             _parentMapping[item.get("FileId")] = int(key) # item.get("ParentFileId")
     if debug:
         print(f"_parentMapping: {_parentMapping}")
     # 遍历所有文件夹和文件列表，添加AbsPath
-    for key, value in tqdm(fullDict.items()):
+    for key, value in fullDict.items():
         for item in value:
             _absPath = str(item.get("FileId"))
             if debug:
@@ -27,7 +27,7 @@ def anonymizeId(itemsList):
     MAP_ID = {}
     count = 0
     # 第一遍: 遍历所有的item.get("FileId")(包含文件和文件夹), 构建映射表
-    for item in tqdm(itemsList, desc="匿名化ID, 构建映射表"):
+    for item in itemsList:
         if item.get("FileId") not in MAP_ID:
             MAP_ID[item.get("FileId")] = count # 只映射不修改数据
             count += 1
@@ -35,7 +35,7 @@ def anonymizeId(itemsList):
             MAP_ID[item.get("parentFileId")] = count # 只映射不修改数据
             count += 1
     # 第二遍: 遍历所有的item.get("parentFileId")和item.get("AbsPath")(包含文件和文件夹), 替换为匿名化后的ID
-    for item in tqdm(itemsList, desc="匿名化ID, 替换为匿名化后的ID"):
+    for item in itemsList:
         _absPath = item.get("AbsPath").split("/")
         _absPath = [str(MAP_ID[int(i)]) for i in _absPath if len(i)]
         _absPath = "/".join(_absPath)

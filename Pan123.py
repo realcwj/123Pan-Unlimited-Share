@@ -4,6 +4,7 @@ from tqdm import tqdm
 import base64
 import json
 import os
+import random
 
 from utils import anonymizeId, makeAbsPath
 
@@ -11,8 +12,8 @@ class Pan123:
     # Refer: https://github.com/AlistGo/alist/blob/main/drivers/123/util.go
     
     def __init__(self, sleepTime=0.1, debug=False):
-        # 等待时间
-        self.sleepTime = sleepTime
+        # 等待时间 (基于输入值[60%, 140%]范围随机取样)
+        self.sleepTime = lambda: random.uniform(sleepTime*0.6, sleepTime*1.4)
         # 调试模式
         self.debug = debug
         # 初始化accessToken和headers
@@ -134,7 +135,7 @@ class Pan123:
         if parentFileId in self.listFilesVisited:
             return None
         
-        print(f"获取文件列表中：parentFileId: {parentFileId}")
+        yield f"获取文件列表中：parentFileId: {parentFileId}"
 
         page = 0
         body = {
@@ -164,6 +165,7 @@ class Pan123:
                 if self.debug:
                     print(f"获取文件列表中：正在获取第{page}页")
                 # 发送请求
+                time.sleep(self.sleepTime())
                 response_data = requests.get(
                     url = self.getActionUrl("FileList"),
                     headers = self.headers,
@@ -178,31 +180,34 @@ class Pan123:
                         if self.debug:
                             print("已是最后一页")
                         break
-                    # 否则进入下一页 (等待self.sleepTime秒, 防止被封)
+                    # 否则进入下一页 (等待 self.sleepTime 秒, 防止被封)
                     else:
                         if self.debug:
-                            print(f"等待{self.sleepTime}秒后进入下一页")
-                        time.sleep(self.sleepTime)
+                            print(f"等待 self.sleepTime 秒后进入下一页")
+                        time.sleep(self.sleepTime())
                 else:
-                    print(f"获取文件列表失败：响应中未找到令牌，尽管API调用可能已成功。响应: {response_data}")
+                    yield f"获取文件列表失败：响应中未找到令牌，尽管API调用可能已成功。响应: {response_data}"
                     return None
 
             # 递归获取子文件夹下的文件
             for sub_file in ALL_ITEMS:
                 if sub_file.get("Type") == 1:
-                    self.listFiles(sub_file.get("FileId"))
+                    yield from self.listFiles(sub_file.get("FileId"))
 
             # 记录当前文件夹内的所有文件
             self.listFilesVisited[parentFileId] = ALL_ITEMS
 
         except Exception as e:
-            print(f"获取文件列表请求发生异常: {e}")
+            yield f"获取文件列表请求发生异常: {e}"
             return None
 
     def exportFiles(self, parentFileId, savePath="./export.123"):
         # 读取文件夹
-        self.listFiles(parentFileId=parentFileId)
+        yield "读取文件夹..."
+        yield from self.listFiles(parentFileId=parentFileId)
+        yield "读取文件夹完成"
         # 清洗数据
+        yield "数据清洗..."
         ALL_ITEMS = []
         for key, value in self.listFilesVisited.items():
             # 遍历所有文件夹和文件列表
@@ -217,15 +222,18 @@ class Pan123:
                     "parentFileId": item.get("ParentFileId"),
                     "AbsPath": item.get("AbsPath").split(f"{parentFileId}/")[-1], # 以输入的parentFileId作为根目录
                 })
+        yield "数据清洗完成"
         # 匿名化
+        yield "匿名化..."
         ALL_ITEMS = anonymizeId(ALL_ITEMS)
+        yield "匿名化完成"
         # 保存数据
         # with open(savePath, "w", encoding="utf-8") as f:
         #     json.dump(ALL_ITEMS, f, indent=4, ensure_ascii=False)
         # 使用 base64 加密json数据防止被简单的内容审查程序读取内容
         with open(savePath, "wb") as f:
             f.write(base64.b64encode(json.dumps(ALL_ITEMS, ensure_ascii=False).encode("utf-8")))
-        print(f"导出完成, 保存到: {savePath}")
+        yield f"导出完成, 保存到: {savePath}"
         
         return True
     
@@ -302,6 +310,8 @@ class Pan123:
         
         ID_MAP = {} # {原文件夹ID: 新文件夹ID}
         
+        # 用 yield 实时返回当前状态
+        yield "数据预处理..."
         # 遍历数据，分类文件夹和文件
         ALL_FOLDERS = []
         ALL_FILES = []
@@ -320,6 +330,9 @@ class Pan123:
                 raise ValueError(f"未知类型：{item}")
 
         ALL_FOLDERS.sort(key=lambda x: x.get("folderDepth")) # 按照深度从0(根目录)开始排序
+        yield "数据预处理完成"
+
+        yield "正在创建文件夹..."
         # 先在根目录创建文件夹
         current_time = time.strftime("%Y%m%d%H%M%S", time.localtime())
         rootFolderName = f"{saveFileName}_{current_time}_GitHub@realcwj" # 请尊重作者, 感谢配合!
@@ -328,7 +341,8 @@ class Pan123:
             folderName = rootFolderName
         )
         # 如果分享的内容包含目录 (root目录放在目录的检测中记录)
-        for folder in tqdm(ALL_FOLDERS):
+        tqdm_bar = tqdm(total=len(ALL_FOLDERS))
+        for folder in ALL_FOLDERS:
             # 如果是根目录, 获取原根目录的parentFileId, 映射到rootFolderId
             if folder.get("folderDepth") == 0:
                 ID_MAP[folder.get("parentFileId")] = rootFolderId
@@ -339,9 +353,21 @@ class Pan123:
             )
             # 映射原文件夹ID到新文件夹ID
             ID_MAP[folder.get("FileId")] = newFolderId
-        
+            
+            tqdm_bar.update(1)
+            tqdm_dict = tqdm_bar.format_dict
+            
+            yield f"[{tqdm_dict['n']}/{tqdm_dict['total']}][速度: {tqdm_dict['rate']:.2f} 个/秒][预估剩余时间: {(tqdm_dict['total']-tqdm_dict['n'])/tqdm_dict['rate']:.2f} 秒] 正在创建文件夹: {folder.get('AbsPath')}"
+
+        tqdm_bar.close()
+
+        yield "创建文件夹完成"
+
+        yield "正在上传文件..."
+
         # 遍历数据, 上传文件
-        for item in tqdm(ALL_FILES):
+        tqdm_bar = tqdm(total=len(ALL_FILES))
+        for item in ALL_FILES:
             if item.get("fileDepth") == 0:
                 ID_MAP[item.get("parentFileId")] = rootFolderId
             self.uploadFile(
@@ -350,9 +376,17 @@ class Pan123:
                 parentFileId = ID_MAP.get(item.get("parentFileId")), # 基于新的目录结构上传文件
                 size = item.get("Size")
             )
-        print(f"导入完成, 保存到123网盘根目录中的: >>> {rootFolderName} <<< 文件夹")
+
+            tqdm_bar.update(1)
+            tqdm_dict = tqdm_bar.format_dict
+
+            yield f"[{tqdm_dict['n']}/{tqdm_dict['total']}][速度: {tqdm_dict['rate']:.2f} 个/秒][预估剩余时间: {(tqdm_dict['total']-tqdm_dict['n'])/tqdm_dict['rate']:.2f} 秒] 正在上传文件: {item.get('FileName')}"
+
+        tqdm_bar.close()
         
-        return True
+        yield "上传文件完成"
+
+        yield f"导入完成, 保存到123网盘根目录中的: >>> {rootFolderName} <<< 文件夹"
     
     def listShare(self, parentFileId, shareKey, sharePwd):
         
@@ -360,7 +394,7 @@ class Pan123:
         if parentFileId in self.listShareVisited:
             return None
         
-        print(f"获取文件列表中：parentFileId: {parentFileId}")
+        yield f"获取文件列表中：parentFileId: {parentFileId}"
 
         page = 0
         body = {
@@ -385,6 +419,7 @@ class Pan123:
                 if self.debug:
                     print(f"获取文件列表中：正在获取第{page}页")
                 # 发送请求
+                time.sleep(self.sleepTime())
                 response_data = requests.get(
                     url = self.getActionUrl("ShareList"),
                     headers = self.headers,
@@ -399,19 +434,19 @@ class Pan123:
                         if self.debug:
                             print("已是最后一页")
                         break
-                    # 否则进入下一页 (等待self.sleepTime秒, 防止被封)
+                    # 否则进入下一页 (等待 self.sleepTime 秒, 防止被封)
                     else:
                         if self.debug:
-                            print(f"等待{self.sleepTime}秒后进入下一页")
-                        time.sleep(self.sleepTime)
+                            print(f"等待 self.sleepTime 秒后进入下一页")
+                        time.sleep(self.sleepTime())
                 else:
-                    print(f"获取文件列表失败：响应中未找到令牌，尽管API调用可能已成功。响应: {response_data}")
+                    yield f"获取文件列表失败：响应中未找到令牌，尽管API调用可能已成功。响应: {response_data}"
                     return None
 
             # 递归获取子文件夹下的文件
             for sub_file in ALL_ITEMS:
                 if sub_file.get("Type") == 1:
-                    self.listShare(
+                    yield from self.listShare(
                         parentFileId = sub_file.get("FileId"),
                         shareKey = shareKey,
                         sharePwd = sharePwd
@@ -421,25 +456,30 @@ class Pan123:
             self.listShareVisited[parentFileId] = ALL_ITEMS
 
         except Exception as e:
-            print(f"获取文件列表请求发生异常: {e}")
+            yield f"获取文件列表请求发生异常: {e}"
             return None
 
     def exportShare(self, shareKey, sharePwd, parentFileId=0, savePath="./export.123"):
+        
         # 读取文件夹
-        self.listShare(
+        yield "正在获取文件列表..."
+        yield from self.listShare(
             parentFileId=parentFileId,
             shareKey=shareKey,
             sharePwd=sharePwd
             )
-        
+        yield "获取文件列表完成"
         # 生成路径
+        yield "重建文件路径结构..."
         self.listShareVisited = makeAbsPath(
             fullDict=self.listShareVisited,
             parentFileId=parentFileId,
             debug=self.debug
         )
+        yield "重建文件路径结构完成"
         
         # 清洗数据
+        yield "清洗数据..."
         ALL_ITEMS = []
         for key, value in self.listShareVisited.items():
             # 遍历所有文件夹和文件列表
@@ -454,14 +494,17 @@ class Pan123:
                     "parentFileId": item.get("ParentFileId"),
                     "AbsPath": item.get("AbsPath").split(f"{parentFileId}/")[-1], # 以输入的parentFileId作为根目录
                 })
+        yield "清洗数据完成"
         # 匿名化
+        yield "匿名化数据..."
         ALL_ITEMS = anonymizeId(ALL_ITEMS)
+        yield "匿名化数据完成"
         # 保存数据
-        # with open(savePath, "w", encoding="utf-8") as f:
-        #     json.dump(ALL_ITEMS, f, indent=4, ensure_ascii=False)
+        with open(savePath, "w", encoding="utf-8") as f:
+            json.dump(ALL_ITEMS, f, indent=4, ensure_ascii=False)
         # 使用 base64 加密json数据防止被简单的内容审查程序读取内容
-        with open(savePath, "wb") as f:
-            f.write(base64.b64encode(json.dumps(ALL_ITEMS, ensure_ascii=False).encode("utf-8")))
-        print(f"导出完成, 保存到: {savePath}")
+        # with open(savePath, "wb") as f:
+        #     f.write(base64.b64encode(json.dumps(ALL_ITEMS, ensure_ascii=False).encode("utf-8")))
+        yield f"导出完成, 保存到: {savePath}"
         
         return True

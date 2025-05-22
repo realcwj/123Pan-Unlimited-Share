@@ -54,25 +54,23 @@ if __name__ == "__main__":
         )
     # 从个人网盘导出
     if mode == "export":
-        driver.exportFiles(
-            parentFileId=homeFilePath,
-            savePath=filePath
-            )
-        print("导出成功")
+        for currentState in driver.exportFiles(parentFileId=homeFilePath,
+                                               savePath=filePath): 
+            print(currentState)
     # 从分享链接导出
     elif mode == "link":
-        driver.exportShare(
-            parentFileId=parentFileId,
-            shareKey=shareKey,
-            sharePwd=sharePwd,
-            savePath=filePath
-        )
+        for currentState in driver.exportShare(parentFileId=parentFileId,
+                                               shareKey=shareKey,
+                                               sharePwd=sharePwd,
+                                               savePath=filePath):
+            print(currentState)
     # 导入
     elif mode == "import":
-        driver.importFiles(
-            filePath=filePath
-        )
-        print("导入成功")
+        fin_text = ""
+        for currentState in driver.importFiles(filePath=filePath):
+            # fin_text += f"{currentState}\n"
+            fin_text = currentState
+        print(fin_text)
     else:
         raise Exception("未知模式")
     # 退出登录
