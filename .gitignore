@@ -7,4 +7,4 @@ __pycache__
 /uploads/*
 *test*
 /public/check/*
-/public/ok/*
+# /public/ok/*
