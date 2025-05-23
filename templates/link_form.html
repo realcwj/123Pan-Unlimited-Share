@@ -19,8 +19,11 @@
             <form id="linkForm">
                 <div class="mb-3">
                     <label for="shareKey" class="form-label">分享链接 Key</label>
-                    <input type="text" class="form-control" id="shareKey" name="shareKey" placeholder="例如: abcd-efg" required>
-                    <div class="form-text">从分享链接中提取 (例如 https://www.xxxx.com/s/<b>abcd-efg</b>)</div>
+                    <input type="text" class="form-control" id="shareKey" name="shareKey" placeholder="例如: abcd-efg 或直接粘贴完整链接" required>
+                    <div class="form-text">
+                        从分享链接中提取 (例如 https://www.xxxx.com/s/<b>abcd-efg</b>)<br>
+                        您也可以直接粘贴完整的链接，浏览器会自动尝试解析。
+                    </div>
                 </div>
                 <div class="mb-3">
                     <label for="sharePwd" class="form-label">分享密码 (提取码)</label>
@@ -84,8 +87,66 @@
             const downloadShareCodeBtn = document.getElementById('downloadShareCodeBtn');
             const copyShareCodeBtn = document.getElementById('copyShareCodeBtn'); 
             
-            let finalShareData = null; // This will store the base64 string
+            const shareKeyInput = document.getElementById('shareKey'); // 获取分享链接Key的输入框
+
+            let finalShareData = null; // 这将存储 base64 字符串
             let finalFilename = "shared_link_data.123share";
+
+            // 自动提取分享链接Key的逻辑
+            if (shareKeyInput) {
+                shareKeyInput.addEventListener('input', function(event) {
+                    const currentVal = event.target.value; // 用户当前的输入值
+                    let processedVal = currentVal; // 处理后的值，默认为当前值
+
+                    // Python 逻辑的JS实现:
+                    // if "/s/" in inputText:
+                    //     inputText = inputText.split("/s/")[-1].strip("/")
+                    // else:
+                    //     inputText = inputText.strip("/")
+
+                    if (processedVal.includes("/s/")) {
+                        // 如果包含 "/s/"，取其之后的部分
+                        const parts = processedVal.split("/s/");
+                        processedVal = parts[parts.length - 1]; // 获取数组最后一个元素
+                    }
+
+                    // 移除URL查询参数 (例如 ?pwd=xxxx)
+                    if (processedVal) { // 确保 processedVal 不是 undefined (例如从空的 split 结果而来)
+                        processedVal = processedVal.split("?")[0];
+                    }
+                    
+                    // 移除开头和末尾的斜杠
+                    if (processedVal) {
+                        processedVal = processedVal.replace(/^\/+|\/+$/g, '');
+                    }
+
+                    // 如果处理后的值与当前输入框的值不同，则更新输入框并尝试调整光标
+                    if (currentVal !== processedVal) {
+                        const cursorPos = event.target.selectionStart; // 记录当前光标位置
+                        // 计算因处理而移除的字符数
+                        // 注意：如果处理逻辑复杂（例如中间插入字符），这个diff计算可能不准确，但对于尾部删除是准确的
+                        const diff = currentVal.length - processedVal.length; 
+
+                        event.target.value = processedVal; // 更新输入框的值
+
+                        // 尝试恢复光标位置
+                        // 新的光标位置应该是原位置减去被删除的字符数
+                        // 例如： "https://.../s/key123/" (光标在末尾) -> "key123" (光标应在新末尾)
+                        // "abc/s/key123" (光标在 k 前) -> "key123" (光标应仍在 k 前)
+                        let newCursorPos = cursorPos - diff;
+                        
+                        // 确保新光标位置不超出处理后字符串的范围
+                        if (newCursorPos < 0) {
+                            newCursorPos = 0;
+                        }
+                        if (newCursorPos > processedVal.length) {
+                            newCursorPos = processedVal.length;
+                        }
+                        
+                        event.target.setSelectionRange(newCursorPos, newCursorPos); // 设置新的光标位置
+                    }
+                });
+            }
 
             linkForm.addEventListener('submit', async function (event) {
                 event.preventDefault();
@@ -96,7 +157,7 @@
                 statusMessage.className = 'alert';
                 finalShareData = null;
 
-                const shareKey = document.getElementById('shareKey').value;
+                const shareKey = shareKeyInput.value; // 从输入框获取最新的 shareKey
                 const sharePwd = document.getElementById('sharePwd').value;
                 const parentFileId = document.getElementById('parentFileId').value;
                 const userSpecifiedBaseName = document.getElementById('userSpecifiedBaseName').value.trim();
@@ -122,7 +183,7 @@
                     filenameParts.push(safeSharePwd);
                 }
                 finalFilename = filenameParts.join('_') + ".123share";
-                finalFilename = finalFilename.replace(/[^a-zA-Z0-9_.\-\u4e00-\u9fa5()]/g, '_');
+                finalFilename = finalFilename.replace(/[^a-zA-Z0-9_.\-\u4e00-\u9fa5()]/g, '_'); // 进一步清洁文件名
 
                 try {
                     const response = await fetch("{{ url_for('api_link') }}", {
@@ -176,12 +237,12 @@
                                     statusMessage.classList.add('alert-danger');
                                 }
                             } catch (e) {
-                                console.error('Error parsing JSON line:', line, e);
+                                console.error('解析JSON行时出错:', line, e);
                                 logOutput.textContent += `错误: 无法解析流数据: ${line}\n`;
                             }
                         }
                     }
-                     if (buffer.trim() !== '') {
+                     if (buffer.trim() !== '') { // 处理缓冲区中可能剩余的最后一行数据
                          try {
                             const jsonData = JSON.parse(buffer);
                             logOutput.textContent += `${jsonData.message}\n`;
@@ -199,13 +260,13 @@
                                 statusMessage.classList.add('alert-danger');
                             }
                         } catch (e) {
-                            console.error('Error parsing final JSON buffer:', buffer, e);
+                            console.error('解析最终JSON缓冲区时出错:', buffer, e);
                             logOutput.textContent += `错误: 无法解析末尾流数据: ${buffer}\n`;
                         }
                     }
 
                 } catch (error) {
-                    console.error('Fetch error:', error);
+                    console.error('Fetch请求错误:', error);
                     statusMessage.textContent = `请求发送失败: ${error.message}`;
                     statusMessage.classList.remove('alert-info', 'alert-success');
                     statusMessage.classList.add('alert-danger');
@@ -216,9 +277,9 @@
             downloadShareCodeBtn.addEventListener('click', function() {
                 if (finalShareData) {
                     try {
-                        // finalShareData is the URL-safe base64 string.
-                        // We want to download this string as the content of the file.
-                        const blob = new Blob([finalShareData], { type: 'application/octet-stream' }); // Content is the base64 string itself
+                        // finalShareData 是 URL安全的 base64 字符串。
+                        // 我们希望将此字符串作为文件的内容下载。
+                        const blob = new Blob([finalShareData], { type: 'application/octet-stream' }); // 内容是 base64 字符串本身
                         
                         const link = document.createElement('a');
                         link.href = URL.createObjectURL(blob);
@@ -228,7 +289,7 @@
                         document.body.removeChild(link);
                         URL.revokeObjectURL(link.href);
                     } catch (e) {
-                        console.error("Error creating download:", e);
+                        console.error("创建下载时出错:", e);
                          alert("创建下载文件失败: " + e.message);
                     }
                 } else {
