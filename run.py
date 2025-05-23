@@ -57,7 +57,7 @@ if __name__ == "__main__":
     if mode == "export":
         for currentState in driver.exportFiles(parentFileId=homeFilePath): 
             if currentState.get("isFinish"):
-                with open(filePath, "wb") as f:
+                with open(filePath, "w") as f:
                     f.write(currentState.get("message"))
                 print("导出成功")
             else:
@@ -68,14 +68,14 @@ if __name__ == "__main__":
                                                shareKey=shareKey,
                                                sharePwd=sharePwd):
             if currentState.get("isFinish"):
-                with open(filePath, "wb") as f:
+                with open(filePath, "w") as f:
                     f.write(currentState["message"])
                 print("导出成功")
             else:
                 print(currentState["message"])
     # 导入
     elif mode == "import":
-        with open(filePath, "rb") as f:
+        with open(filePath, "r") as f:
             base64Data = f.read()
         rootFolderName = os.path.basename(filePath).strip(".123share")
         for currentState in driver.importFiles(base64Data=base64Data,

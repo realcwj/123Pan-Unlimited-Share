@@ -3,7 +3,6 @@ import requests
 from tqdm import tqdm
 import base64
 import json
-import os
 import random
 
 from utils import anonymizeId, makeAbsPath
@@ -99,7 +98,7 @@ class Pan123:
             else:
                 # 理论上，如果code不是200或者token缺失，sendRequest的code检查应该已经捕获了此情况
                 # 此处作为一个额外保障
-                print(f"登录失败：响应中未找到令牌，尽管API调用可能已成功。响应: {response_data}")
+                print(f"登录失败：{response_data}")
                 return None
         except Exception as e:
             print(f"登录请求发生异常: {e}")
@@ -122,7 +121,7 @@ class Pan123:
                     print("注销成功")
                 return True
             else:
-                print(f"注销失败：响应中未找到令牌，尽管API调用可能已成功。响应: {response_data}")
+                print(f"注销失败：{response_data}")
                 return None
         except Exception as e:
             print(f"注销请求发生异常: {e}")
@@ -186,8 +185,7 @@ class Pan123:
                             print(f"等待 self.sleepTime 秒后进入下一页")
                         time.sleep(self.sleepTime())
                 else:
-                    yield {"isFinish": False, "message": f"获取文件列表失败：响应中未找到令牌，尽管API调用可能已成功。响应: {response_data}"}
-                    return
+                    yield {"isFinish": False, "message": f"获取文件列表失败：{response_data}"}
 
             # 递归获取子文件夹下的文件
             for sub_file in ALL_ITEMS:
@@ -199,7 +197,6 @@ class Pan123:
 
         except Exception as e:
             yield {"isFinish": False, "message": f"获取文件列表请求发生异常: {e}"}
-            return
 
     def exportFiles(self, parentFileId):
         # 读取文件夹
@@ -228,7 +225,7 @@ class Pan123:
         ALL_ITEMS = anonymizeId(ALL_ITEMS)
         yield {"isFinish": None, "message": f"数据匿名化完成"}
         # 返回url_safe的base64数据(防止被简单的内容审查程序读取内容)
-        yield {"isFinish": True, "message": base64.urlsafe_b64encode(json.dumps(ALL_ITEMS, ensure_ascii=False).encode("utf-8"))}
+        yield {"isFinish": True, "message": base64.urlsafe_b64encode(json.dumps(ALL_ITEMS, ensure_ascii=False).encode("utf-8")).decode("utf-8")}
 
 
     def createFolder(self, parentFileId, folderName):
@@ -258,7 +255,7 @@ class Pan123:
                 # 返回文件夹Id
                 return {"isFinish": True, "message": fileId}
             else:
-                return {"isFinish": False, "message": f"创建文件夹失败：响应中未找到令牌，尽管API调用可能已成功。响应: {response_data}"}
+                return {"isFinish": False, "message": f"创建文件夹失败：{response_data}"}
         except Exception as e:
             return {"isFinish": False, "message": f"创建文件夹请求发生异常: {e}"}
     
@@ -286,7 +283,7 @@ class Pan123:
                 # 返回文件Id
                 return {"isFinish": True, "message": fileId}
             else:
-                return {"isFinish": False, "message": f"上传文件失败：响应中未找到令牌，尽管API调用可能已成功。响应: {response_data}"}
+                return {"isFinish": False, "message": f"上传文件失败：{response_data}"}
         except Exception as e:
             return {"isFinish": False, "message": f"上传文件请求发生异常: {e}"}
     
@@ -297,7 +294,6 @@ class Pan123:
             files_list = json.loads(base64.urlsafe_b64decode(base64Data))
         except Exception as e:
             yield {"isFinish": False, "message": f"读取数据失败, 报错：{e}"}
-            return
         yield {"isFinish": None, "message": "数据读取完成"}
         
         ID_MAP = {} # {原文件夹ID: 新文件夹ID}
@@ -335,7 +331,6 @@ class Pan123:
             rootFolderId = rootFolderId.get("message") # 获取文件夹ID
         else:
             yield rootFolderId # 返回错误信息
-            return
         # 如果分享的内容包含目录 (root目录放在目录的检测中记录)
         tqdm_bar = tqdm(total=len(ALL_FOLDERS))
         for folder in ALL_FOLDERS:
@@ -351,7 +346,6 @@ class Pan123:
                 newFolderId = newFolderId.get("message") # 获取文件夹ID
             else:
                 yield newFolderId # 返回错误信息
-                return
             
             # 映射原文件夹ID到新文件夹ID
             ID_MAP[folder.get("FileId")] = newFolderId
@@ -385,7 +379,6 @@ class Pan123:
                 newFileId = newFileId.get("message") # 获取文件ID (目前没用到)
             else:
                 yield newFileId # 返回错误信息
-                return
             
             tqdm_bar.update(1)
             tqdm_dict = tqdm_bar.format_dict
@@ -453,8 +446,7 @@ class Pan123:
                             print(f"等待 self.sleepTime 秒后进入下一页")
                         time.sleep(self.sleepTime())
                 else:
-                    yield {"isFinish": False, "message": f"获取文件列表失败：响应中未找到令牌，尽管API调用可能已成功。响应: {response_data}"}
-                    return
+                    yield {"isFinish": False, "message": f"获取文件列表失败：{response_data}"}
 
             # 递归获取子文件夹下的文件
             for sub_file in ALL_ITEMS:
@@ -470,7 +462,6 @@ class Pan123:
 
         except Exception as e:
             yield {"isFinish": False, "message": f"获取文件列表请求发生异常: {e}"}
-            return
 
     def exportShare(self, shareKey, sharePwd, parentFileId=0):
         
@@ -513,4 +504,4 @@ class Pan123:
         ALL_ITEMS = anonymizeId(ALL_ITEMS)
         yield {"isFinish": None, "message": f"数据匿名化完成"}
         # 返回url_safe的base64数据(防止被简单的内容审查程序读取内容)
-        yield {"isFinish": True, "message": base64.urlsafe_b64encode(json.dumps(ALL_ITEMS, ensure_ascii=False).encode("utf-8"))}
+        yield {"isFinish": True, "message": base64.urlsafe_b64encode(json.dumps(ALL_ITEMS, ensure_ascii=False).encode("utf-8")).decode("utf-8")}
