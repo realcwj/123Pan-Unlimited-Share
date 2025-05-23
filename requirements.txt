@@ -1,3 +1,4 @@
 flask
 tqdm
 requests
+beautifulsoup4
