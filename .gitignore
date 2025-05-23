@@ -7,4 +7,5 @@ __pycache__
 /uploads/*
 *test*
 /public/check/*
+PRIVATE_KEY.md
 # /public/ok/*
