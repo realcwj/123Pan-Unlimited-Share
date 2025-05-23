@@ -6,6 +6,7 @@ import re
 import unicodedata
 
 from Pan123 import Pan123
+from telegram_spider import startSpider
 
 DEBUG = False
 
@@ -308,4 +309,16 @@ def link_page():
     return resp
 
 if __name__ == '__main__':
+
+    channel_name = "" # 大家应该都知道是telegram的哪个群, 自己填入（@xxxx的xxxx部分）, GitHub不明说了
+    message_after_id = 8050 # 从 8050 开始爬, 因为之前的内容【全】【都】【失】【效】【了】
+
+    # 从Telegram频道爬取数据, 导入到公共资源库
+    startSpider(
+        channel_name=channel_name,
+        message_after_id=message_after_id,
+        debug=DEBUG
+    )
+
+    # 启动Flask应用
     app.run(debug=DEBUG, host='0.0.0.0', port=33333, threaded=True)
