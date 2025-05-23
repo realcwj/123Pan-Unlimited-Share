@@ -19,9 +19,9 @@
             <form id="linkForm">
                 <div class="mb-3">
                     <label for="shareKey" class="form-label">分享链接 Key</label>
-                    <input type="text" class="form-control" id="shareKey" name="shareKey" placeholder="例如: abcd-efg 或直接粘贴完整链接" required>
+                    <input type="text" class="form-control" id="shareKey" name="shareKey" placeholder="例如: abcd-efg 或 https://www.xxx.com/s/abcd-efg" required>
                     <div class="form-text">
-                        从分享链接中提取 (例如 https://www.xxxx.com/s/<b>abcd-efg</b>)<br>
+                        从分享链接中提取 (例如 https://www.xxx.com/s/<b>abcd-efg</b>)<br>
                         您也可以直接粘贴完整的链接，浏览器会自动尝试解析。
                     </div>
                 </div>
@@ -97,12 +97,6 @@
                 shareKeyInput.addEventListener('input', function(event) {
                     const currentVal = event.target.value; // 用户当前的输入值
                     let processedVal = currentVal; // 处理后的值，默认为当前值
-
-                    // Python 逻辑的JS实现:
-                    // if "/s/" in inputText:
-                    //     inputText = inputText.split("/s/")[-1].strip("/")
-                    // else:
-                    //     inputText = inputText.strip("/")
 
                     if (processedVal.includes("/s/")) {
                         // 如果包含 "/s/"，取其之后的部分
