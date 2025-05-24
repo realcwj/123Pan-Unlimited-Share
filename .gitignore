@@ -6,6 +6,7 @@ __pycache__
 /*.json
 /uploads/*
 *test*
-/public/check/*
+/public/check/*.123share
 PRIVATE_KEY.md
-/public/ok/*
+/public/ok/*.123share
+/public/ok/*.zip
