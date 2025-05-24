@@ -8,5 +8,5 @@ __pycache__
 *test*
 /public/check/*.123share
 PRIVATE_KEY.md
-/public/ok/*.123share
-/public/ok/*.zip
+# /public/ok/*.123share
+# /public/ok/*.zip
