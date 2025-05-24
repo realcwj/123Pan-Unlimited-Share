@@ -218,6 +218,12 @@ def startSpider(channel_name, message_after_id=None, save_interval=10, debug=Fal
     # 调用 Pan123 导出 *.123share 到公共资源库
     driver = Pan123(debug=debug)
     for key, value in total_json_processed_data.items():
+        # 如果name已经存在, 则跳过
+        if os.path.exists(f"./public/ok/{value.get('name')}.123share"):
+            if debug:
+                print(f"[{key}] 跳过：{value.get('name')}, 原因：文件已存在")
+            continue
+        print(f"[{key}] 导出新增内容：{value.get('name')}")
         iter_driver = driver.exportShare(shareKey=value.get("link"), sharePwd=value.get("pwd"), parentFileId=0)
         for current_state in iter_driver:
             if current_state.get("isFinish"):
