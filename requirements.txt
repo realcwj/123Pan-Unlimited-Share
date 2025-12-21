@@ -1,5 +1,7 @@
 flask
+fastapi
 tqdm
 requests
 beautifulsoup4
 pyyaml
+uvicorn

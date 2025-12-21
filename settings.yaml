@@ -45,3 +45,25 @@ LOGGING_LEVEL: "INFO"
 # True: 启用IP区域检测，中国大陆IP将被重定向到 /banip 页面
 # False: 关闭IP区域检测，所有IP均可访问
 BAN_IP: True
+
+
+# WebDAV 相关配置
+# WebDAV 账号
+WEBDAV_USERNAME: "admin"
+# WebDAV 密码
+WEBDAV_PASSWORD: "123456"
+# WebDAV IP (保持默认即可)
+WEBDAV_HOST: "0.0.0.0"
+# WebDAV 端口
+WEBDAV_PORT: 8000
+# 是否拆分目录
+# 当数据库内条数过多(例如超过1000条)时, 在根目录显示所有文件夹, 会导致几乎所有客户端崩溃
+# 此时需要额外套一层父文件夹，确保每个文件夹内的文件数目合理可靠
+# 默认为True, 除非你知道你在干什么, 否则不要乱改
+# 当你使用我提供的数据库时, 务必设置为True
+# 当你使用你自己的数据库, 且数据库内条目较少时，可以设置为False
+SPLIT_FOLDER: True
+# 123云盘账号
+123PAN_USERNAME: "13566666666"
+# 123云盘密码
+123PAN_PASSWORD: "123456"
