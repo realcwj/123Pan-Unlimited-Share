@@ -4,8 +4,8 @@ from getGlobalLogger import logger
 from flask import Flask, render_template, request, make_response, \
                     session, redirect, url_for, flash
 
-from loadSettings import loadSettings
-from Pan123Database import Pan123Database
+from src.config.loadSettings import loadSettings
+from src.database.Pan123Database import Pan123Database
 
 # --- 从 api 包导入处理函数 ---
 from api.action_export import handle_export_request
